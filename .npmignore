@@ -1,0 +1,35 @@
+# Source files
+src/
+examples/
+
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+__tests__/
+vitest.config.ts
+
+# Build config
+vite.config.ts
+tsconfig.json
+
+# Dev files
+.git/
+.gitignore
+.vscode/
+.idea/
+node_modules/
+.npmrc
+
+# Documentation / summaries (README is included via "files" in package.json)
+BUILD_SUMMARY.md
+FINAL_SUMMARY.txt
+IMPLEMENTATION_SUMMARY.md
+TESTING.md
+TESTING_COMPLETE.md
+TEST_RESULTS.md
+
+# Misc
+*.tgz
+package-lock.json
+.npmignore
