@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>HydeSecurityJS Vanilla Example</title>
+</head>
+<body>
+  <h1>HydeSecurityJS Vanilla Example</h1>
+  <script type="module">
+    import { HydeSecurity } from '../../src/index.ts'
+    HydeSecurity.init({ appName: 'Vanilla Demo', mode: 'balanced', enableLogs: true, onThreatDetected: (e) => console.warn('Threat', e) })
+    document.addEventListener('DOMContentLoaded', () => {
+      HydeSecurity.toast('HydeSecurity active')
+    })
+  </script>
+</body>
+</html>

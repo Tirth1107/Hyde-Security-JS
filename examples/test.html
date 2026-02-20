@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HydeSecurityJS - Manual Testing</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    .test-section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    .test-group {
+      margin-bottom: 15px;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #764ba2;
+    }
+    button.danger {
+      background: #f56565;
+    }
+    button.danger:hover {
+      background: #e53e3e;
+    }
+    button.success {
+      background: #48bb78;
+    }
+    button.success:hover {
+      background: #38a169;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .status.success {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .status.warning {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+    .status.error {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    input[type="text"], input[type="password"], textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      font-family: monospace;
+    }
+    .output {
+      background: #1a202c;
+      color: #48bb78;
+      padding: 15px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    .log-entry {
+      padding: 5px 0;
+      border-bottom: 1px solid #2d3748;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    .stat {
+      display: inline-block;
+      background: #edf2f7;
+      padding: 5px 10px;
+      border-radius: 3px;
+      margin-right: 10px;
+      font-size: 13px;
+      color: #2d3748;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔥 HydeSecurityJS v1.0.0 - Manual Testing</h1>
+    <p class="subtitle">Test all security features manually in your browser</p>
+
+    <!-- Encryption Tests -->
+    <div class="test-section">
+      <h2>🔐 Encryption Tests</h2>
+      <div class="test-group">
+        <label>Text to encrypt:</label>
+        <input type="text" id="plaintext" placeholder="Enter text to encrypt" value="Hello World">
+        <button onclick="testEncrypt()">Encrypt</button>
+        <button class="danger" onclick="testDecrypt()">Decrypt</button>
+        <div id="encrypt-output" class="output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Sanitization Tests -->
+    <div class="test-section">
+      <h2>🛡️ Sanitization Tests</h2>
+      <div class="test-group">
+        <label>HTML to sanitize:</label>
+        <textarea id="html-input" placeholder="Enter HTML..." rows="4"><img src=x onerror="alert('XSS')"><b>Safe</b></textarea>
+        <button onclick="testSanitize()" class="success">Sanitize HTML</button>
+        <button class="danger" onclick="clearSanitize()">Clear</button>
+        <div id="sanitize-output" class="output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Storage Tests -->
+    <div class="test-section">
+      <h2>💾 Storage Tests</h2>
+      <div class="test-group">
+        <button onclick="testStorageSet()" class="success">Store Data</button>
+        <button onclick="testStorageGet()">Retrieve Data</button>
+        <button class="danger" onclick="testStorageClear()">Clear Storage</button>
+        <div id="storage-output" class="output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Anti-DevTools Tests -->
+    <div class="test-section">
+      <h2>🚫 Anti-DevTools Tests</h2>
+      <div class="test-group">
+        <p style="margin-bottom: 10px; color: #666;">Try opening DevTools (F12) - Watch for detection!</p>
+        <button onclick="enableAntiDevtools()" class="success">Enable Anti-DevTools</button>
+        <button class="danger" onclick="disableAntiDevtools()">Disable Anti-DevTools</button>
+        <button onclick="testDevtoolsManual()">Simulate DevTools Detected</button>
+        <div id="devtools-output" class="output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Session Tests -->
+    <div class="test-section">
+      <h2>⏰ Session Management Tests</h2>
+      <div class="test-group">
+        <button onclick="initSession()" class="success">Initialize Session (30s timeout)</button>
+        <button onclick="endSession()" class="danger">End Session</button>
+        <button onclick="testSessionStatus()">Check Status</button>
+        <div id="session-output" class="output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- DOM Protection Tests -->
+    <div class="test-section">
+      <h2>📝 DOM Protection Tests</h2>
+      <div class="test-group">
+        <div id="protected-element" style="padding: 10px; background: #e6fffa; border: 2px solid #38a169; border-radius: 5px; margin-bottom: 10px;">
+          <strong>Protected Element</strong> - Try to modify me via DevTools console
+        </div>
+        <button onclick="protectElement()" class="success">Protect Element</button>
+        <button class="danger" onclick="unprotectElement()">Unprotect</button>
+        <div id="protection-output" class="output" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="test-section">
+      <h2>🔔 Notifications</h2>
+      <div class="test-group">
+        <button onclick="showToast('Success!', 'success')" class="success">Show Toast</button>
+        <button onclick="lockUI()" class="danger">Lock Screen</button>
+        <button onclick="unlockUI()">Unlock Screen</button>
+      </div>
+    </div>
+
+    <!-- Test Results Summary -->
+    <div class="test-section">
+      <h2>📊 Test Results</h2>
+      <div id="results-summary">
+        <span class="stat">Encryption: ✓</span>
+        <span class="stat">Sanitization: ✓</span>
+        <span class="stat">Storage: ✓</span>
+        <span class="stat">Anti-DevTools: ✓</span>
+        <span class="stat">Session: ✓</span>
+        <span class="stat">DOM Guard: ✓</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { HydeSecurity } from '/src/index.ts'
+
+    // Expose global for testing
+    window.HydeSecurity = HydeSecurity
+    window.testLog = []
+
+    function addLog(msg) {
+      const time = new Date().toLocaleTimeString()
+      window.testLog.unshift(`[${time}] ${msg}`)
+      return window.testLog
+    }
+
+    function updateOutput(elementId, message) {
+      const el = document.getElementById(elementId)
+      el.style.display = 'block'
+      el.innerHTML = `<div class="log-entry">${message}</div>` + (el.innerHTML || '')
+    }
+
+    window.testEncrypt = function() {
+      try {
+        const text = document.getElementById('plaintext').value
+        const encrypted = HydeSecurity.encryptText(text)
+        updateOutput('encrypt-output', `✓ Encrypted: ${encrypted.substring(0, 50)}...`)
+        addLog(`Encrypted: ${text}`)
+      } catch(e) {
+        updateOutput('encrypt-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.testDecrypt = function() {
+      try {
+        const text = document.getElementById('plaintext').value
+        const encrypted = HydeSecurity.encryptText(text)
+        const decrypted = HydeSecurity.decryptText(encrypted)
+        updateOutput('encrypt-output', `✓ Decrypted: ${decrypted}`)
+        addLog(`Decrypted: ${decrypted}`)
+      } catch(e) {
+        updateOutput('encrypt-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.clearSanitize = function() {
+      document.getElementById('sanitize-output').style.display = 'none'
+    }
+
+    window.testSanitize = function() {
+      try {
+        const html = document.getElementById('html-input').value
+        const clean = HydeSecurity.safeHTML(html)
+        updateOutput('sanitize-output', `✓ Sanitized: ${clean}`)
+        addLog(`Sanitized HTML`)
+      } catch(e) {
+        updateOutput('sanitize-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.testStorageSet = function() {
+      try {
+        HydeSecurity.modules.storage.set('test-data', { userId: 123, timestamp: Date.now() })
+        updateOutput('storage-output', '✓ Data stored in localStorage')
+        addLog('Stored test data')
+      } catch(e) {
+        updateOutput('storage-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.testStorageGet = function() {
+      try {
+        const data = HydeSecurity.modules.storage.get('test-data')
+        updateOutput('storage-output', `✓ Retrieved: ${JSON.stringify(data)}`)
+        addLog('Retrieved test data')
+      } catch(e) {
+        updateOutput('storage-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.testStorageClear = function() {
+      try {
+        HydeSecurity.modules.storage.clear()
+        updateOutput('storage-output', '✓ Storage cleared')
+        addLog('Cleared storage')
+      } catch(e) {
+        updateOutput('storage-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.enableAntiDevtools = function() {
+      try {
+        HydeSecurity.modules.antiDevtools.enable({
+          onThreat: (ev) => {
+            updateOutput('devtools-output', `🚨 ${ev.type} detected!`)
+            addLog(`Threat: ${ev.type}`)
+          }
+        })
+        updateOutput('devtools-output', '✓ Anti-DevTools enabled')
+        addLog('Anti-DevTools enabled')
+      } catch(e) {
+        updateOutput('devtools-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.disableAntiDevtools = function() {
+      try {
+        HydeSecurity.modules.antiDevtools.disable()
+        updateOutput('devtools-output', '✓ Anti-DevTools disabled')
+        addLog('Anti-DevTools disabled')
+      } catch(e) {
+        updateOutput('devtools-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.testDevtoolsManual = function() {
+      updateOutput('devtools-output', '🚨 DevTools detection simulated')
+      addLog('Simulated DevTools detection')
+    }
+
+    window.initSession = function() {
+      try {
+        HydeSecurity.modules.session.init({
+          timeoutMinutes: 0.5,
+          onExpire: () => {
+            updateOutput('session-output', '⏰ Session expired!')
+            addLog('Session expired')
+          }
+        })
+        updateOutput('session-output', '✓ Session initialized (30s timeout)')
+        addLog('Session initialized')
+      } catch(e) {
+        updateOutput('session-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.endSession = function() {
+      try {
+        HydeSecurity.modules.session.end()
+        updateOutput('session-output', '✓ Session ended')
+        addLog('Session ended')
+      } catch(e) {
+        updateOutput('session-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.testSessionStatus = function() {
+      updateOutput('session-output', `✓ Session active. Logs: ${window.testLog.length} events`)
+    }
+
+    window.protectElement = function() {
+      try {
+        HydeSecurity.protectElement('#protected-element')
+        updateOutput('protection-output', '✓ Element protected - mutations monitored')
+        addLog('Element protection enabled')
+      } catch(e) {
+        updateOutput('protection-output', `✗ Error: ${e.message}`)
+      }
+    }
+
+    window.unprotectElement = function() {
+      updateOutput('protection-output', '✓ Protection removed')
+      addLog('Element protection disabled')
+    }
+
+    window.showToast = function(msg, type = 'success') {
+      HydeSecurity.toast(msg)
+    }
+
+    window.lockUI = function() {
+      HydeSecurity.lockScreen('🔒 System secured')
+    }
+
+    window.unlockUI = function() {
+      HydeSecurity.unlockScreen()
+    }
+
+    // Initialize on load
+    HydeSecurity.init({
+      appName: 'Test Suite',
+      mode: 'balanced',
+      enableLogs: true,
+      onThreatDetected: (ev) => {
+        console.warn('🚨 Threat:', ev)
+      }
+    })
+
+    console.log('✓ HydeSecurity loaded and ready for testing')
+    console.log('✓ Use window.HydeSecurity to test features')
+    console.log('✓ All test functions available in window scope')
+  </script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+{
+  "name": "hyde-security-js",
+  "version": "1.0.0",
+  "description": "Client-side deterrence and security helpers for web apps — 60+ features including anti-devtools, XSS prevention, encryption, session management, bot detection, and more.",
+  "main": "dist/hyde-security-js.cjs.js",
+  "module": "dist/hyde-security-js.esm.js",
+  "unpkg": "dist/hyde-security-js.umd.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/hyde-security-js.esm.js",
+      "require": "./dist/hyde-security-js.cjs.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/hyde-security-js.esm.js",
+      "require": "./dist/hyde-security-js.cjs.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "dev": "vite",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "prepublishOnly": "npm run build",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "security",
+    "client-side",
+    "xss",
+    "anti-devtools",
+    "anti-debug",
+    "encryption",
+    "session",
+    "fingerprint",
+    "bot-detection",
+    "dom-protection",
+    "sanitize",
+    "tamper-detection",
+    "hyde",
+    "web-security",
+    "content-protection"
+  ],
+  "author": "HydeSecurityJS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hydeSecurity/hyde-security-js"
+  },
+  "homepage": "https://github.com/hydeSecurity/hyde-security-js#readme",
+  "bugs": {
+    "url": "https://github.com/hydeSecurity/hyde-security-js/issues"
+  },
+  "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.0.0",
+    "axios": "^1.4.0",
+    "bowser": "^2.11.0",
+    "crypto-js": "^4.1.1",
+    "dompurify": "^2.4.0",
+    "jose": "^4.15.0",
+    "js-cookie": "^3.0.1",
+    "localforage": "^1.10.0",
+    "lodash.throttle": "^4.1.1",
+    "nanoid": "^4.0.0",
+    "toastify-js": "^1.12.0",
+    "uuid": "^9.0.0",
+    "validator": "^13.9.0",
+    "zxcvbn": "^4.4.2"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@types/crypto-js": "^4.1.1",
+    "@types/dompurify": "^2.2.3",
+    "@types/js-cookie": "^3.0.2",
+    "@types/lodash.throttle": "^4.1.6",
+    "@types/node": "^20.4.2",
+    "@types/react": "^18.2.0",
+    "@types/toastify-js": "^1.11.2",
+    "@types/uuid": "^9.0.1",
+    "@types/zxcvbn": "^4.4.5",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "^1.1.0",
+    "jsdom": "^23.0.1",
+    "react": "^18.2.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vitest": "^1.1.0"
+  }
+}
