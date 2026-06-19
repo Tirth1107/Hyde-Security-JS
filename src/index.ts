@@ -27,6 +27,9 @@ import { setupAxios } from './modules/headers'
 import { tabGuard } from './modules/tabGuard'
 import { obfuscator } from './modules/obfuscator'
 import { antiScreenCapture } from './modules/antiScreenCapture'
+import { csrfProtection } from './modules/csrfProtection'
+import { contentSecurityPolicy } from './modules/contentSecurityPolicy'
+import { inputValidation } from './modules/inputValidation'
 import { HydeSecurityProvider } from './modules/react/HydeSecurityProvider'
 import { useHydeSecurity } from './modules/react/useHydeSecurity'
 
@@ -39,26 +42,53 @@ const state = {
   enabled: true
 }
 
+let removeWatermark: (() => void) | null = null
+
 const API = {
   init(cfg: Partial<HydeSecurityConfig> = {}) {
     state.config = { ...state.config, ...cfg }
     initLogger(state.config)
-    // enable features depending on mode
-    if (state.config.mode === 'strict') {
-      antiDevtools.antiDevtools.enable({ onThreat: state.config.onThreatDetected, autoLock: true })
-      antiDebug.antiDebug.enable({ onThreat: state.config.onThreatDetected })
-    } else if (state.config.mode === 'balanced') {
-      antiDevtools.antiDevtools.enable({ onThreat: state.config.onThreatDetected })
-    }
-    if (state.config.enableWatermark) addWatermark(state.config.appName)
+    this.enableAll()
     log('initialized', state.config)
   },
+  
   setMode(mode: 'dev' | 'balanced' | 'strict') {
     state.config.mode = mode
+    this.disableAll()
+    this.enableAll()
   },
+  
   enableAll() {
     state.enabled = true
+    const { mode, onThreatDetected, enableWatermark, appName, allowedIframes, enableAntiCopy, enableAntiPrint, enableAntiContextMenu, enableTabGuard, enableAntiScreenCapture, enableAntiIframe } = state.config
+
+    if (mode === 'strict' || mode === 'balanced') {
+      antiDevtools.antiDevtools.enable({ onThreat: onThreatDetected, autoLock: mode === 'strict' })
+      if (enableAntiIframe !== false) antiIframe.antiIframe.enable({ onThreat: onThreatDetected, allowedOrigins: allowedIframes })
+    }
+
+    if (mode === 'strict') {
+      antiDebug.antiDebug.enable({ onThreat: onThreatDetected })
+      if (enableAntiCopy !== false) antiCopy.antiCopy.enable({ onThreat: onThreatDetected })
+      if (enableAntiPrint !== false) antiPrint.antiPrint.enable({ onThreat: onThreatDetected })
+      if (enableAntiContextMenu !== false) antiContextMenu.antiContextMenu.enable({ onThreat: onThreatDetected })
+      if (enableTabGuard !== false) tabGuard.enable({ onThreat: onThreatDetected })
+      if (enableAntiScreenCapture !== false) antiScreenCapture.enable({ onThreat: onThreatDetected })
+    } else {
+      // Allow overriding even in non-strict modes
+      if (enableAntiCopy) antiCopy.antiCopy.enable({ onThreat: onThreatDetected })
+      if (enableAntiPrint) antiPrint.antiPrint.enable({ onThreat: onThreatDetected })
+      if (enableAntiContextMenu) antiContextMenu.antiContextMenu.enable({ onThreat: onThreatDetected })
+      if (enableTabGuard) tabGuard.enable({ onThreat: onThreatDetected })
+      if (enableAntiScreenCapture) antiScreenCapture.enable({ onThreat: onThreatDetected })
+    }
+
+    if (enableWatermark) {
+      if (removeWatermark) removeWatermark()
+      removeWatermark = addWatermark(appName)
+    }
   },
+  
   disableAll() {
     state.enabled = false
     antiDevtools.antiDevtools.disable()
@@ -68,10 +98,26 @@ const API = {
     antiPrint.antiPrint.disable()
     tabGuard.disable()
     antiScreenCapture.disable()
+    antiIframe.antiIframe.disable()
+    
+    if (removeWatermark) {
+      removeWatermark()
+      removeWatermark = null
+    }
   },
+
+  destroy() {
+    this.disableAll()
+    session.session.destroy?.()
+  },
+
+  getVersion() {
+    return '1.1.0'
+  },
+  
   toast(msg: string) {
+    if (typeof document === 'undefined') return
     try {
-      // minimal toast
       const el = document.createElement('div')
       el.style.position = 'fixed'
       el.style.bottom = '12px'
@@ -86,39 +132,51 @@ const API = {
       setTimeout(() => el.remove(), 3000)
     } catch (e) { }
   },
+  
   lockScreen(reason?: string) {
     antiDevtools.antiDevtools.lockScreen(reason)
   },
+  
   unlockScreen() {
     antiDevtools.antiDevtools.unlockScreen()
   },
+  
   encryptText(text: string, key?: string) {
     return encryption.encryption.encrypt(text, key)
   },
+  
   decryptText(cipher: string, key?: string) {
     return encryption.encryption.decrypt(cipher, key)
   },
+  
   safeHTML(s: string) {
     return sanitize.sanitize.html(s)
   },
+  
   checkPassword(password: string) {
     return passwordStrength.check(password)
   },
+  
   detectBot() {
     return antiBot.detectHeadless()
   },
+  
   protectElement(selector: string) {
+    if (typeof document === 'undefined') return null
     return domGuard.domGuard.protect(selector, () => {
-      state.config.onThreatDetected && state.config.onThreatDetected({ id: 'tamper', type: 'tamper', severity: 'critical', timestamp: Date.now() })
+      state.config.onThreatDetected?.({ id: 'tamper', type: 'tamper', severity: 'critical', timestamp: Date.now() })
     })
   },
+  
   protectInput(selector: string) {
+    if (typeof document === 'undefined') return null
     const el = document.querySelector(selector) as HTMLInputElement | null
     if (!el) return null
     const handler = (e: Event) => e.preventDefault()
     el.addEventListener('paste', handler)
     return () => el.removeEventListener('paste', handler)
   },
+  
   modules: {
     antiDevtools: antiDevtools.antiDevtools,
     antiDebug: antiDebug.antiDebug,
@@ -132,7 +190,7 @@ const API = {
     cookie: cookie.cookie,
     session: session.session,
     rateLimiter: { makeRateLimited: rateLimiter.makeRateLimited },
-    forms,
+    forms: forms.forms,
     network,
     fingerprint,
     device,
@@ -146,13 +204,16 @@ const API = {
     headers: { setupAxios },
     tabGuard,
     obfuscator,
-    antiScreenCapture
+    antiScreenCapture,
+    csrfProtection,
+    contentSecurityPolicy,
+    inputValidation
   }
 }
 
 // attach to window
 if (typeof window !== 'undefined') {
-  ; (window as any).HydeSecurity = API
+  ;(window as any).HydeSecurity = API
 }
 
 export const HydeSecurity = API

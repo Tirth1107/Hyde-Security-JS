@@ -1,11 +1,14 @@
 {
-  "name": "hyde-security-js",
-  "version": "1.0.0",
+  "name": "@tirth1107/hyde-security-js",
+  "version": "1.1.0",
   "description": "Client-side deterrence and security helpers for web apps — 60+ features including anti-devtools, XSS prevention, encryption, session management, bot detection, and more.",
   "main": "dist/hyde-security-js.cjs.js",
   "module": "dist/hyde-security-js.esm.js",
   "unpkg": "dist/hyde-security-js.umd.js",
   "types": "dist/index.d.ts",
+  "publishConfig": {
+  "access": "public"
+  },
   "exports": {
     ".": {
       "import": "./dist/hyde-security-js.esm.js",
@@ -56,11 +59,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hydeSecurity/hyde-security-js"
+    "url": "https://github.com/Tirth1107/Hyde-Security-JS.git"
   },
-  "homepage": "https://github.com/hydeSecurity/hyde-security-js#readme",
+  "homepage": "https://github.com/Tirth1107/Hyde-Security-JS#readme",
   "bugs": {
-    "url": "https://github.com/hydeSecurity/hyde-security-js/issues"
+    "url": "https://github.com/Tirth1107/Hyde-Security-JS/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.0.0",
@@ -97,6 +103,7 @@
     "@types/react": "^18.2.0",
     "@types/toastify-js": "^1.11.2",
     "@types/uuid": "^9.0.1",
+    "@types/validator": "^13.7.0",
     "@types/zxcvbn": "^4.4.5",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/ui": "^1.1.0",

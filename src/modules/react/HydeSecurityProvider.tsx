@@ -1,31 +1,39 @@
-import React, { createContext, useContext, useEffect } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { HydeSecurityConfig, defaultConfig } from '../../core/config'
-import { initLogger } from '../../core/logger'
-import { antiDevtools } from '../antiDevtools'
-import { antiDebug } from '../antiDebug'
-import { addWatermark } from '../watermark'
+import HydeSecurity from '../../index'
 
-const HydeContext = createContext<{ config: HydeSecurityConfig }>({ config: defaultConfig })
+export interface HydeSecurityContextType {
+  config: HydeSecurityConfig
+  isInitialized: boolean
+  security: typeof HydeSecurity
+}
+
+const HydeContext = createContext<HydeSecurityContextType>({ 
+  config: defaultConfig,
+  isInitialized: false,
+  security: HydeSecurity
+})
 
 export function HydeSecurityProvider({ config, children }: { config: HydeSecurityConfig; children: React.ReactNode }) {
+  const [isInitialized, setIsInitialized] = useState(false)
+
   useEffect(() => {
-    initLogger(config)
-    if (config.mode === 'strict') {
-      antiDevtools.enable({ onThreat: config.onThreatDetected, autoLock: true })
-      antiDebug.enable({ onThreat: config.onThreatDetected })
-    } else if (config.mode === 'balanced') {
-      antiDevtools.enable({ onThreat: config.onThreatDetected })
-    }
-    let removeWatermark: (() => void) | null = null
-    if (config.enableWatermark) removeWatermark = addWatermark(config.appName)
+    if (typeof window === 'undefined') return
+
+    // Initialize HydeSecurity
+    HydeSecurity.init(config)
+    setIsInitialized(true)
+
     return () => {
-      antiDevtools.disable()
-      antiDebug.disable()
-      removeWatermark && removeWatermark()
+      HydeSecurity.destroy()
     }
   }, [config])
 
-  return <HydeContext.Provider value={{ config }}>{children}</HydeContext.Provider>
+  return (
+    <HydeContext.Provider value={{ config, isInitialized, security: HydeSecurity }}>
+      {children}
+    </HydeContext.Provider>
+  )
 }
 
 export function useHydeSecurityContext() {

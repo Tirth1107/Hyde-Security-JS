@@ -1,33 +1,41 @@
-import { uid, now } from '../core/utils'
-import { HydeSecurityEvent } from '../core/config'
-
-let enabled = false
-let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
-
-function report(type: string, details?: Record<string, any>) {
-  const ev: HydeSecurityEvent = { id: uid(), type, severity: 'critical', details, timestamp: now() }
-  onThreat?.(ev)
-  return ev
-}
-
 export const antiIframe = {
-  enable(opts?: { onThreat?: (ev: HydeSecurityEvent) => void; allowedOrigins?: string[] }) {
-    if (enabled) return
-    enabled = true
-    onThreat = opts?.onThreat
+  enable(opts?: { onThreat?: (ev: any) => void; allowedOrigins?: string[] }) {
+    if (typeof window === 'undefined') return
+
     try {
       if (window.self !== window.top) {
-        const origin = document.referrer || 'unknown'
-        if (!opts?.allowedOrigins?.includes(origin)) {
-          report('iframe_detected', { origin })
-          if (window.top) window.top.location.href = 'about:blank'
+        // We are in an iframe
+        const referrer = document.referrer
+        let isAllowed = false
+
+        if (opts?.allowedOrigins && opts.allowedOrigins.length > 0 && referrer) {
+          try {
+            const refUrl = new URL(referrer)
+            isAllowed = opts.allowedOrigins.includes(refUrl.origin)
+          } catch (e) {
+            // Invalid referrer URL
+          }
+        }
+
+        if (!isAllowed) {
+          opts?.onThreat?.({ id: 'iframe', type: 'iframe', severity: 'critical', timestamp: Date.now() })
+          if (window.top) {
+            window.top.location.href = window.self.location.href
+          }
         }
       }
     } catch (e) {
-      report('iframe_detection_blocked')
+      // Access to window.top might throw due to cross-origin policies
+      opts?.onThreat?.({ id: 'iframe_cross_origin', type: 'iframe', severity: 'critical', timestamp: Date.now() })
+      // Try to break out anyway
+      try {
+        if (window.top) window.top.location.href = window.self.location.href
+      } catch (err) {}
     }
   },
+
   disable() {
-    enabled = false
+    // Cannot really "disable" once we broke out of the iframe, 
+    // but provided for interface compliance
   }
 }

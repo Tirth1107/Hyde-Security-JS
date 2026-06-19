@@ -1,108 +1,49 @@
-# 🔥 HydeSecurityJS v1.0.0
+# 🔥 HydeSecurityJS v1.1.0
 
-**Client-side deterrence and security helpers** for web applications. Provides layered protection against common client-side threats: XSS, copy/paste abuse, DevTools interference, session hijacking, iframe injection, and more.
+![npm](https://img.shields.io/npm/v/@tirth1107/hyde-security-js)
+![license](https://img.shields.io/npm/l/@tirth1107/hyde-security-js)
+![bundle size](https://img.shields.io/bundlephobia/minzip/@tirth1107/hyde-security-js)
 
-> ⚠️ **Important:** This is NOT a "hack-proof" system. Browser JavaScript cannot provide server-level security. HydeSecurityJS provides **deterrence**, **best-practice helpers**, and **hardening** layers with safe defaults.
+**Client-side deterrence and security helpers** for modern web applications. Provides layered protection against common client-side threats: XSS, copy/paste abuse, DevTools interference, session hijacking, iframe injection, CSRF, and more.
+
+> ⚠️ **Important:** Browser JavaScript cannot provide server-level security. HydeSecurityJS provides **deterrence**, **best-practice helpers**, and **hardening** layers with safe defaults. Always pair with server-side validation.
 
 ## Why HydeSecurityJS?
 
 Modern web apps face real threats:
 - **Content theft** (copy, screenshot, print)
 - **Debug/inspect abuse** (tampering, devtools)
-- **Injection attacks** (XSS via user input)
+- **Injection attacks** (XSS, SQLi via user input)
 - **Session stealing** (token exposure, replay attacks)
-- **Automated abuse** (bots, fast-clicking)
+- **Automated abuse** (bots, fast-clicking, CSRF)
 - **Framing attacks** (clickjacking, invisible iframes)
 
-HydeSecurityJS gives you ready-to-use defenses for all of these.
-
-## What It Can / Cannot Do
-
-### ✅ It CAN:
-- Detect DevTools open and react (blur UI, warn, lock screen)
-- Block/detect common shortcuts (F12, Ctrl+Shift+I, etc.)
-- Sanitize user-generated HTML (XSS prevention)
-- Encrypt sensitive data before storage
-- Rate-limit actions (clicks, API calls)
-- Detect session anomalies via fingerprinting
-- Protect DOM nodes from tampering
-- Add session timeout and multi-tab logout
-- Block iframe framing
-- Detect headless browsers and fast automation
-
-### ❌ It CANNOT:
-- Prevent determined attackers (browser is client-side)
-- Enforce crypto on the wire (use HTTPS + server-side validation)
-- Prevent all screen capture tools
-- Replace server-side validation and security
-- Protect against network-level interception
+HydeSecurityJS gives you ready-to-use defenses for all of these in a single, lightweight package.
 
 ## Installation
 
 ```bash
-npm install hyde-security-js
-```
-
-Or from CDN (when UMD build is available):
-```html
-<script src="https://cdn.example.com/hyde-security-js@1.0.0/dist/hyde-security-js.umd.js"></script>
-<script>
-  window.HydeSecurity.init({ appName: 'My App', mode: 'balanced' })
-</script>
+npm install @tirth1107/hyde-security-js
 ```
 
 ## Quick Start
 
-### Vanilla HTML/JS
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My App</title>
-</head>
-<body>
-  <h1>Protected Content</h1>
-  <video id="protected" src="video.mp4"></video>
-
-  <script type="module">
-    import { HydeSecurity } from 'hyde-security-js'
-    
-    // Initialize with strict mode
-    HydeSecurity.init({
-      appName: 'My Streaming App',
-      mode: 'strict',
-      enableLogs: true,
-      enableWatermark: true,
-      onThreatDetected: (event) => {
-        console.warn('🚨 Threat detected:', event)
-      }
-    })
-    
-    // Protect a specific element
-    HydeSecurity.protectElement('#protected')
-    
-    // Show toast notification
-    HydeSecurity.toast('Security initialized')
-  </script>
-</body>
-</html>
-```
-
 ### React
+
+Wrap your app or specific routes with `HydeSecurityProvider`:
 
 ```jsx
 import React from 'react'
-import { HydeSecurityProvider } from 'hyde-security-js/react'
+import { HydeSecurityProvider, useHydeSecurity } from '@tirth1107/hyde-security-js/react'
 
 export default function App() {
   return (
     <HydeSecurityProvider
       config={{
-        appName: 'Streaming Platform',
-        mode: 'balanced',
+        appName: 'My Secure App',
+        mode: 'strict', // 'dev' | 'balanced' | 'strict'
         enableWatermark: true,
-        onThreatDetected: (event) => console.warn(event)
+        onThreatDetected: (event) => console.warn('Threat detected:', event)
       }}
     >
       <YourApp />
@@ -113,22 +54,18 @@ export default function App() {
 
 ### Next.js
 
-Wrap your root layout with `HydeSecurityProvider`:
+Use it in your root layout:
 
 ```jsx
 // app/layout.tsx
-import { HydeSecurityProvider } from 'hyde-security-js/react'
+'use client'
+import { HydeSecurityProvider } from '@tirth1107/hyde-security-js/react'
 
 export default function RootLayout({ children }) {
   return (
     <html>
       <body>
-        <HydeSecurityProvider
-          config={{
-            appName: 'My SaaS',
-            mode: 'balanced'
-          }}
-        >
+        <HydeSecurityProvider config={{ appName: 'My SaaS', mode: 'balanced' }}>
           {children}
         </HydeSecurityProvider>
       </body>
@@ -137,384 +74,114 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### Vite (SPA)
-
-Same as vanilla; import at app entry:
+### Vanilla HTML/JS or Vite (SPA)
 
 ```js
-// src/main.ts
-import { HydeSecurity } from 'hyde-security-js'
+import { HydeSecurity } from '@tirth1107/hyde-security-js'
 
 HydeSecurity.init({
-  appName: 'My Vite App',
-  mode: 'balanced',
-  enableLogs: false
-})
-```
-
-## API Reference
-
-### Core
-
-#### `HydeSecurity.init(config?: HydeSecurityConfig)`
-Initialize the security system.
-
-**Config:**
-```ts
-interface HydeSecurityConfig {
-  appName?: string              // App name for logging/watermark
-  mode?: 'dev' | 'balanced' | 'strict'  // Security level
-  enableLogs?: boolean          // Console logging
-  enableWatermark?: boolean     // Add watermark overlay
-  onThreatDetected?: (event) => void  // Threat callback
-  allowedIframes?: string[]     // Allowed iframe origins
-}
-```
-
-**Modes:**
-- **dev**: Minimal blocking, logs only
-- **balanced**: Blocks shortcuts, encrypts storage (recommended)
-- **strict**: All features enabled, blocks most actions, locks UI
-
-#### `HydeSecurity.setMode(mode)`
-Change security mode at runtime.
-
-#### `HydeSecurity.disableAll() / enableAll()`
-Disable or re-enable all security features.
-
-### UI & Notifications
-
-#### `HydeSecurity.toast(message: string)`
-Show a toast notification (auto-dismisses after 3s).
-
-#### `HydeSecurity.lockScreen(reason?: string)`
-Show a full-screen overlay with a message. Use after detecting threats.
-
-#### `HydeSecurity.unlockScreen()`
-Remove the lock screen overlay.
-
-### Encryption & Storage
-
-#### `HydeSecurity.encryptText(text, key?) → string`
-Encrypt a string using AES-256 (CryptoJS).
-
-#### `HydeSecurity.decryptText(cipher, key?) → string`
-Decrypt an encrypted string.
-
-#### `HydeSecurity.modules.encryption.encryptObject(obj, key?) → string`
-Encrypt a JSON object.
-
-#### `HydeSecurity.modules.storage.set(key, value, {encrypt?: boolean})`
-Store data with optional encryption.
-
-#### `HydeSecurity.modules.storage.get(key, {decrypt?: boolean})`
-Retrieve stored data, optionally decrypted.
-
-#### `HydeSecurity.modules.storage.clear()`
-Clear all storage.
-
-### Content Protection
-
-#### `HydeSecurity.protectElement(selector: string)`
-Watch a DOM element for tampering via MutationObserver. Triggers `onThreatDetected` if modified.
-
-#### `HydeSecurity.protectInput(selector: string)`
-Block paste events on a password/sensitive input.
-
-#### `HydeSecurity.safeHTML(html: string) → string`
-Sanitize HTML using DOMPurify. Safe for `innerHTML`.
-
-```js
-const safe = HydeSecurity.safeHTML('<img src=x onerror=alert(1) />')
-element.innerHTML = safe  // Safe!
-```
-
-### Anti-Devtools & Anti-Debug
-
-#### `HydeSecurity.modules.antiDevtools.enable(config?)`
-Enable DevTools detection. Detects window size changes and debugger traps.
-
-```js
-HydeSecurity.modules.antiDevtools.enable({
-  onThreat: (event) => console.warn(event),
-  autoLock: true  // Lock screen when detected
-})
-```
-
-#### `HydeSecurity.modules.antiDevtools.disable()`
-Disable anti-devtools.
-
-### Anti-Copy / Anti-Print
-
-#### `HydeSecurity.modules.antiCopy.enable()`
-Block copy/cut/drag operations.
-
-#### `HydeSecurity.modules.antiPrint.enable()`
-Blur content on print preview.
-
-#### `HydeSecurity.modules.antiContextMenu.enable()`
-Block right-click context menu.
-
-### Session Management
-
-#### `HydeSecurity.modules.session.init(opts?)`
-Initialize session timeout and multi-tab logout.
-
-```js
-HydeSecurity.modules.session.init({
-  timeoutMinutes: 30,
-  onExpire: () => location.href = '/login'
-})
-```
-
-#### `HydeSecurity.modules.session.end()`
-End session and clear all tabs.
-
-### Forms & Sanitization
-
-#### `HydeSecurity.modules.forms.attachSanitize(formElement)`
-Auto-sanitize all form inputs on submit.
-
-#### `HydeSecurity.modules.forms.addHoneypot(formElement)`
-Add a hidden honeypot field to detect bots.
-
-```js
-const form = document.querySelector('form')
-HydeSecurity.modules.forms.addHoneypot(form)
-HydeSecurity.modules.forms.attachSanitize(form)
-```
-
-### Network & Integrity
-
-#### `HydeSecurity.modules.network.createClient(opts?)`
-Create an axios client with security headers.
-
-```js
-const client = HydeSecurity.modules.network.createClient({
-  apiKey: 'your-api-key',
-  sign: true
-})
-await client.get('/api/data')
-```
-
-#### `HydeSecurity.modules.headers.setupAxios(client?, opts?)`
-Add security headers to an existing axios instance.
-
-### Anti-Bot & Device Detection
-
-#### `HydeSecurity.modules.antiBot.detectFastTyping(element, threshold?)`
-Detect rapid keyboard input (automation).
-
-```js
-const check = HydeSecurity.modules.antiBot.detectFastTyping(passwordInput, 30)
-// later: const { fast } = check()
-```
-
-#### `HydeSecurity.modules.antiBot.detectHeadless()`
-Detect headless browser (navigator.webdriver, etc.).
-
-#### `HydeSecurity.modules.device.detectDevice()`
-Get device info (browser, OS, type) using Bowser.
-
-### Advanced
-
-#### `HydeSecurity.modules.fingerprint.getFingerprint() → Promise<string>`
-Get a browser fingerprint ID for session replay detection.
-
-#### `HydeSecurity.modules.domGuard.protect(selector, onTamper?)`
-Watch a DOM node; call `onTamper` if modified.
-
-#### `HydeSecurity.modules.routerGuard.protectHistory(onChange)`
-Watch route changes.
-
-## Feature List (60+ Features)
-
-### Category A: Anti-DevTools + Anti-Debug (10)
-✅ Detect DevTools open (size trap)  
-✅ Detect DevTools (debugger timing)  
-✅ Block F12  
-✅ Block Ctrl+Shift+I  
-✅ Block Ctrl+Shift+J  
-✅ Block Ctrl+Shift+C  
-✅ Block Ctrl+U  
-✅ Console logging bait  
-✅ Auto-lock UI on detection  
-✅ Security warning overlay  
-
-### Category B: Anti-Copy + Anti-Print (8)
-✅ Block Ctrl+S  
-✅ Block Ctrl+P  
-✅ Blur on print  
-✅ Disable copy on protected elements  
-✅ Disable cut  
-✅ Block paste in password fields  
-✅ Prevent image drag  
-✅ Watermark overlay  
-
-### Category C: DOM & Injection Protection (10)
-✅ HTML sanitization (DOMPurify)  
-✅ Safe innerHTML setter  
-✅ URL sanitizer  
-✅ Form input sanitization  
-✅ Suspicious DOM injection detection  
-✅ MutationObserver guard  
-✅ Remove inline event handlers  
-✅ Block script tag injection  
-✅ CSP helper  
-✅ Clickjacking prevention (frame busting)  
-
-### Category D: Storage & Encryption (10)
-✅ AES encrypt/decrypt  
-✅ Encrypt JSON objects  
-✅ Secure localStorage wrapper  
-✅ Secure sessionStorage wrapper  
-✅ localforage fallback  
-✅ Token vault with expiry  
-✅ Auto-wipe on tamper  
-✅ Mask sensitive values  
-✅ Prevent raw secrets  
-✅ PBKDF2 key derivation  
-
-### Category E: Session & Auth (6)
-✅ Session idle timeout  
-✅ Tab close cleanup  
-✅ Multi-tab sync logout  
-✅ JWT decode helper  
-✅ Session replay detection  
-✅ Login attempt limiter  
-
-### Category F: Bot & Abuse Detection (6)
-✅ Honeypot fields  
-✅ Fast typing detection  
-✅ Rate limiter for clicks  
-✅ Headless browser detection  
-✅ Suspicious repeat action detection  
-✅ Device trust score  
-
-### Category G: Network Protection (5)
-✅ Axios wrapper with signing  
-✅ Integrity headers  
-✅ Auto-retry with backoff  
-✅ Block if integrity fails  
-✅ API error sanitizer  
-
-### Category H: Integrity & Tamper (5)
-✅ Script integrity check  
-✅ DOM watermark overlay  
-✅ Source mod detection  
-✅ Iframe detection  
-✅ Lock UI on tamper  
-
-## Configuration Examples
-
-### Video Streaming App (Strict)
-```js
-HydeSecurity.init({
-  appName: 'FlixPro',
+  appName: 'My Vanilla App',
   mode: 'strict',
   enableWatermark: true,
-  enableLogs: false,
   onThreatDetected: (event) => {
-    if (event.severity === 'critical') {
-      HydeSecurity.lockScreen('Your session has been secured.')
-    }
-    // Send to backend for logging
-    fetch('/api/security/event', { method: 'POST', body: JSON.stringify(event) })
+    // Send to your backend logging service
+    fetch('/api/security-logs', { method: 'POST', body: JSON.stringify(event) })
   }
 })
 
-// Protect video element
-HydeSecurity.protectElement('#video-player')
-
-// Encrypt sensitive tokens before storage
-const token = HydeSecurity.encryptText(authToken, 'secret')
-localStorage.setItem('auth', token)
+// Use specific modules
+const secureKey = HydeSecurity.encryptText('secret-data', 'my-key')
 ```
 
-### SaaS Dashboard (Balanced)
+## Configuration & Modes
+
+Initialize with `HydeSecurity.init(config)` or via the React Provider:
+
+```ts
+interface HydeSecurityConfig {
+  appName?: string              // Used for watermarks and logging
+  mode?: 'dev' | 'balanced' | 'strict' // Overall security posture
+  enableLogs?: boolean          // Show console logs
+  enableWatermark?: boolean     // Tiled canvas watermark overlay
+  onThreatDetected?: (ev: HydeSecurityEvent) => void
+  
+  // Granular Overrides (defaults depend on mode)
+  enableAntiCopy?: boolean
+  enableAntiPrint?: boolean
+  enableAntiContextMenu?: boolean
+  enableTabGuard?: boolean
+  enableAntiScreenCapture?: boolean
+  enableAntiIframe?: boolean
+  allowedIframes?: string[]
+}
+```
+
+## 🛡️ Core Features (v1.1.0)
+
+### 1. Anti-DevTools & Anti-Debug
+Detects when users open DevTools and optional UI locking.
+- Detects size traps, debugger timing, console latency, and Firebug.
+- Blocks F12, Ctrl+Shift+I/J/C, and Ctrl+U.
+
+### 2. Content Protection (Anti-Copy, Print, Screen Capture)
+- **Anti-Copy**: Blocks copy, cut, drag, and selection.
+- **Anti-Print**: Blocks Ctrl+P and visually blurs the document if print dialog opens.
+- **Anti-Screen Capture**: Deters screenshots using DRM APIs and Canvas overlays.
+- **Watermarking**: Tiled, tamper-resistant canvas watermark over the entire screen.
+
+### 3. Session Management & Storage
+- **Session Timeout**: Auto-logout after inactivity, synchronized across tabs.
+- **Secure Storage**: `storage.set(key, val, { encrypt: true, ttl: 3600 })` — encrypts data and adds auto-expiring TTLs.
+- **Secure Cookies**: `cookie.setSecure(key, val)` defaults to `Secure` and `SameSite=Strict`.
+
+### 4. Injection & XSS Prevention
+- **HTML Sanitization**: `sanitize.html(input)` and `sanitize.safeSetHTML(el, input)` powered by DOMPurify.
+- **URL & Text**: `sanitize.url(url)` ensures safe protocols; `sanitize.text(input)` escapes HTML.
+- **CSP Helper**: `contentSecurityPolicy.build()` and `inject()` for easy Content Security Policy management.
+- **Input Validation**: Detect SQLi, XSS, and validate emails/URLs with `inputValidation.validateField()`.
+
+### 5. Bot & Abuse Deterrence
+- **Honeypots**: `forms.addHoneypot(form)` adds invisible fields; `honeypot.isTriggered(form)` detects bots.
+- **Fast Typing & Headless**: Detects superhuman typing speeds and headless browser artifacts.
+- **CSRF Protection**: `csrfProtection.attachToAxios(client)` auto-injects CSRF tokens from meta tags.
+
+### 6. Network & Integrity
+- **Request Signing**: `network.createClient({ sign: true })` signs requests using HMAC-SHA256.
+- **Auto-Retry**: Network client automatically retries 5xx errors with exponential backoff.
+- **Script Integrity**: `integrity.checkScriptIntegrity(src, hash)` verifies external scripts via SHA-256.
+
+## Advanced Usage
+
+### Using the API directly
+
 ```js
-HydeSecurity.init({
-  appName: 'DataDash',
-  mode: 'balanced',
-  enableLogs: true,
-  onThreatDetected: console.warn
-})
+import { HydeSecurity } from '@tirth1107/hyde-security-js'
 
-// Protect forms
-const form = document.querySelector('form')
-HydeSecurity.modules.forms.attachSanitize(form)
-HydeSecurity.modules.forms.addHoneypot(form)
+// 1. Manually protect a specific element from DOM tampering
+HydeSecurity.protectElement('#sensitive-data')
 
-// Protect password input
-HydeSecurity.protectInput('#password')
+// 2. Encrypt/Decrypt
+const encrypted = HydeSecurity.encryptText('Hello', 'passphrase')
+const decrypted = HydeSecurity.decryptText(encrypted, 'passphrase')
 
-// Session timeout
-HydeSecurity.modules.session.init({
-  timeoutMinutes: 15,
-  onExpire: () => location.href = '/login'
-})
+// 3. Password Strength (zxcvbn)
+const strength = HydeSecurity.checkPassword('P@ssw0rd123!')
+console.log(strength.feedback)
+
+// 4. Access individual modules
+const { inputValidation, csrfProtection } = HydeSecurity.modules
+
+if (inputValidation.isSQLInjection("SELECT * FROM users")) {
+  HydeSecurity.lockScreen("Malicious input detected")
+}
 ```
 
-### Development Site (Dev Mode)
-```js
-HydeSecurity.init({
-  appName: 'DevSite',
-  mode: 'dev',
-  enableLogs: true
-})
-// Minimal blocking, inspect as needed
-```
+## Migration Guide: v1.0.0 to v1.1.0
 
-## Security Best Practices
-
-1. **Always use HTTPS**: Client-side security is worthless without transport security.
-2. **Validate on the server**: Never trust client-side validation alone.
-3. **Use CSP headers**: Set `Content-Security-Policy` headers server-side.
-4. **Monitor events**: Send `onThreatDetected` events to your backend for analysis.
-5. **Combine layers**: Use HydeSecurityJS with server-side protections.
-6. **Test regularly**: Verify your security configuration works as expected.
-7. **Keep dependencies updated**: Run `npm audit` and update regularly.
-
-## Troubleshooting
-
-**Q: DevTools detection not working?**  
-A: Some browsers may bypass size-based detection. HydeSecurityJS uses multiple methods (size, debugger trap, timing). For guaranteed prevention, use CSP and server-side validation.
-
-**Q: Encryption keys are in client-side code?**  
-A: For client-side encryption, keys must be in code (or fetched). This is **not secure for sensitive data**. Use server-side encryption for real secrets.
-
-**Q: Does this stop screenshots?**  
-A: No. Screenshots are OS-level and cannot be blocked from the browser. Watermarks add a deterrent.
-
-**Q: Can I use this with my framework?**  
-A: Yes! Import and use in any React, Vue, Angular, Svelte app. For React, use `HydeSecurityProvider`. For others, call `HydeSecurity.init()` in your root component/entry.
-
-## Limitations
-
-- **Not hack-proof**: This is client-side; determined attackers can bypass anything.
-- **Browser-dependent**: Features vary by browser and can be disabled by users.
-- **Performance**: Some features (fingerprinting, encryption) add overhead.
-- **Privacy**: Watermarks and logging may impact user privacy; inform users.
-
-## Contributing
-
-Contributions welcome! Please:
-1. Fork the repo
-2. Create a feature branch
-3. Add tests if applicable
-4. Submit a PR
+- **Scoped Package:** We have moved to the scoped package `@tirth1107/hyde-security-js`. Please update your `package.json` and imports.
+- **Module Improvements:** Many sub-modules were fixed for memory leaks, SSR compatibility, and proper security defaults (e.g., `cookie.set()` now defaults to Secure).
+- **New Modules:** Explore `csrfProtection`, `contentSecurityPolicy`, and `inputValidation` in `HydeSecurity.modules`.
 
 ## License
 
-MIT — See [LICENSE](LICENSE)
-
-## Support
-
-- **Docs**: See examples in `examples/` folder
-- **Issues**: Open a GitHub issue
-- **Questions**: Check the FAQ above
-
----
-
-**Made with 🔥 by Hyde Team**
-
+MIT © [Tirth1107](https://github.com/Tirth1107)
