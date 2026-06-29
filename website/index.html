@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HydeSecurityJS v1.5 Pro | Ultimate Client-Side Security</title>
+  <meta name="description" content="Layered client-side protection against XSS, copy/paste abuse, DevTools interference, clickjacking, and bot automation.">
+  
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-container">
+      <a href="#" class="navbar-brand">
+        <span style="font-size: 1.2rem; margin-right: 8px;">🛡️</span> 
+        HydeSecurityJS
+      </a>
+      <div class="hamburger">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="navbar-links">
+        <a href="#features">Features</a>
+        <a href="#demo">Live Demo</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="https://github.com/Tirth1107/Hyde-Security-JS" class="btn btn-outline" style="padding: 6px 16px;">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <div class="container hero-container">
+      <div class="hero-content reveal">
+        <div class="hero-badge">v1.5.0 Pro is Here</div>
+        <h1 class="hero-title">Military-Grade Client-Side <span>Security Layer</span></h1>
+        <p class="hero-subtitle">
+          Stop content theft, UI redressing, DevTools tampering, and malicious bots instantly. Drop-in protection for React, Next.js, and Vanilla JS.
+        </p>
+        <div class="hero-actions">
+          <a href="#demo" class="btn btn-primary">Try Interactive Demo</a>
+          <a href="#quickstart" class="btn btn-outline">Documentation</a>
+        </div>
+        
+        <div class="hero-install" style="margin-top: 32px; display: inline-flex; align-items: center; background: var(--bg-code); padding: 12px 24px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <code style="color: var(--accent-4); font-family: 'JetBrains Mono', monospace;">npm install @tirth1107/hyde-security-js</code>
+          <button class="copy-btn" style="margin-left: 16px; background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 4px 12px; border-radius: var(--radius-sm); cursor: pointer;">Copy</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2>Next-Generation Protection</h2>
+        <p>Over 60+ security features built-in to harden your web application.</p>
+      </div>
+
+      <div class="features-grid reveal-stagger">
+        <!-- Pro Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon" style="color: var(--accent-5);">✨</div>
+          <h3 class="feature-title">Self-Healing DOM</h3>
+          <p class="feature-desc">If attackers try to delete your watermarks or alter critical elements via DevTools, HydeSecurity instantly reconstructs the element from memory in milliseconds.</p>
+        </div>
+        <!-- Pro Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon" style="color: var(--accent-1);">🧠</div>
+          <h3 class="feature-title">Behavioral Biometrics</h3>
+          <p class="feature-desc">Goes beyond simple CAPTCHAs. Continuously analyzes mouse trajectories and keystroke flight-times to detect automated bots and emulators in real-time.</p>
+        </div>
+        <!-- Pro Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon" style="color: var(--accent-2);">👁️</div>
+          <h3 class="feature-title">Anti-Clickjacking (v2)</h3>
+          <p class="feature-desc">Utilizes the cutting-edge IntersectionObserver v2 API to detect if invisible iframes or CSS transforms are occluding your sensitive buttons.</p>
+        </div>
+        <!-- Pro Feature 4 -->
+        <div class="feature-card">
+          <div class="feature-icon" style="color: var(--accent-4);">🧱</div>
+          <h3 class="feature-title">Zero-Trust Network Firewall</h3>
+          <p class="feature-desc">Intercepts all Fetch and XHR requests at the browser API level to enforce strict domain allowlisting, completely stopping data exfiltration attacks.</p>
+        </div>
+        <!-- Standard Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon" style="color: #ef4444;">🛑</div>
+          <h3 class="feature-title">DevTools & Debugger Lock</h3>
+          <p class="feature-desc">Detects when DevTools are opened via shortcuts or sizing anomalies. Implements debugger traps to halt malicious reverse-engineering.</p>
+        </div>
+        <!-- Standard Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon" style="color: #22c55e;">🛡️</div>
+          <h3 class="feature-title">XSS & Injection Defense</h3>
+          <p class="feature-desc">Built-in DOMPurify html sanitization, strict URL validation, and automated CSRF token injection for your network clients.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Demo -->
+  <section class="api-section" id="demo" style="background: var(--bg-secondary); padding: 80px 0;">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2>Live Pro Interactive Demo</h2>
+        <p>Experience the v1.5 Pro features directly in your browser.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px;" class="reveal-stagger">
+        
+        <!-- Biometrics Demo -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px;">
+          <h3 style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🧠</span> Behavioral Biometrics
+          </h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">Move your mouse naturally in the zone and type to prove you are human.</p>
+          
+          <div id="demo-bio-zone" style="height: 120px; background: rgba(0,0,0,0.3); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <input type="text" placeholder="Type naturally here..." style="width: 80%; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-code); color: white; margin-top: 10px;">
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div id="demo-bio-score" style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: bold; color: var(--text-muted);">Score: --</div>
+            <button id="btn-start-bio" class="btn btn-primary" style="padding: 6px 16px; font-size: 14px;">Start Tracking</button>
+          </div>
+        </div>
+
+        <!-- Self-Healing Demo -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px;">
+          <h3 style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">✨</span> Self-Healing DOM
+          </h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">This element is invincible. Click 'Simulate Attack' or use DevTools to try and delete it.</p>
+          
+          <div id="demo-heal-target" style="padding: 16px; background: rgba(34, 197, 94, 0.1); border-left: 4px solid #22c55e; border-radius: var(--radius-sm); margin-bottom: 16px;">
+            <strong style="color: #22c55e; display: block; margin-bottom: 4px;">Protected Content</strong>
+            <span style="font-size: 13px;">I cannot be destroyed.</span>
+          </div>
+          
+          <div style="display: flex; gap: 12px;">
+            <button id="btn-enable-heal" class="btn btn-primary" style="padding: 6px 16px; font-size: 14px;">Enable Protection</button>
+            <button id="btn-attack-heal" class="btn btn-outline" style="padding: 6px 16px; font-size: 14px;">Simulate Attack</button>
+          </div>
+        </div>
+
+        <!-- Network Firewall Demo -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px;">
+          <h3 style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🧱</span> Zero-Trust Firewall
+          </h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">Try fetching data. The firewall will block unauthorized domains instantly.</p>
+          
+          <div id="demo-fw-log" style="height: 100px; background: var(--bg-code); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-bottom: 16px; color: var(--text-secondary);">
+            // Firewall logs will appear here
+          </div>
+          
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="btn-enable-fw" class="btn btn-primary" style="padding: 6px 16px; font-size: 14px; width: 100%;">Enable Firewall (Allow 'api.github.com')</button>
+            <button id="btn-fetch-good" class="btn btn-outline" style="padding: 6px 16px; font-size: 14px; flex: 1;">Fetch Github (Safe)</button>
+            <button id="btn-fetch-bad" class="btn btn-outline" style="padding: 6px 16px; font-size: 14px; flex: 1; border-color: #ef4444; color: #ef4444;">Fetch Evil (Threat)</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Quickstart -->
+  <section class="quickstart" id="quickstart">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2>Drop-In Installation</h2>
+        <p>Integrates seamlessly into any modern stack in less than 2 minutes.</p>
+      </div>
+
+      <div class="quickstart-tabs reveal">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="react">React / Next.js</button>
+          <button class="tab-btn" data-tab="vanilla">Vanilla JS</button>
+        </div>
+        
+        <div class="tab-content active" data-tab-content="react">
+          <div class="code-block-wrapper">
+            <button class="code-block-copy">Copy</button>
+            <pre><code>import { HydeSecurityProvider } from '@tirth1107/hyde-security-js/react'
+
+export default function App({ children }) {
+  return (
+    &lt;HydeSecurityProvider
+      config={{
+        appName: 'My SaaS App',
+        mode: 'strict',
+        enableWatermark: true,
+        onThreatDetected: (e) => console.log('Threat!', e)
+      }}
+    &gt;
+      {children}
+    &lt;/HydeSecurityProvider&gt;
+  )
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="tab-content" data-tab-content="vanilla">
+          <div class="code-block-wrapper">
+            <button class="code-block-copy">Copy</button>
+            <pre><code>import { HydeSecurity } from '@tirth1107/hyde-security-js'
+
+HydeSecurity.init({
+  appName: 'My Vanilla App',
+  mode: 'strict',
+  enableWatermark: true,
+  onThreatDetected: (e) => {
+    fetch('/api/logs', { method: 'POST', body: JSON.stringify(e) })
+  }
+})
+
+// Use Pro Features manually
+HydeSecurity.modules.biometrics.startTracking()
+HydeSecurity.modules.networkFirewall.enable(['api.myapp.com'])</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="text-align: center; padding: 40px; border-top: 1px solid var(--border-color); color: var(--text-muted);">
+    <p>© 2026 HydeSecurityJS by Tirth1107. MIT Licensed.</p>
+  </footer>
+
+  <script type="module" src="./script.js"></script>
+  
+  <!-- Interactive Demo Logic -->
+  <script type="module">
+    import HydeSecurity from '../src/index.ts';
+    
+    // Initialize standard library silently for the page
+    HydeSecurity.init({ appName: 'Hyde Demo Site', mode: 'dev', enableLogs: false });
+
+    // --- Biometrics Demo ---
+    let bioTracker = null;
+    let bioInterval = null;
+    const btnBio = document.getElementById('btn-start-bio');
+    const scoreEl = document.getElementById('demo-bio-score');
+    
+    btnBio.addEventListener('click', () => {
+      if (!bioTracker) {
+        bioTracker = HydeSecurity.modules.biometrics.startTracking(document.getElementById('demo-bio-zone'));
+        btnBio.textContent = 'Stop Tracking';
+        bioInterval = setInterval(() => {
+          const score = bioTracker.getHumanScore();
+          scoreEl.textContent = `Score: ${score}% Human`;
+          scoreEl.style.color = score > 50 ? '#22c55e' : '#ef4444';
+        }, 1000);
+      } else {
+        bioTracker.stop();
+        bioTracker = null;
+        clearInterval(bioInterval);
+        btnBio.textContent = 'Start Tracking';
+        scoreEl.textContent = 'Score: --';
+        scoreEl.style.color = 'var(--text-muted)';
+      }
+    });
+
+    // --- Self-Healing Demo ---
+    let healStop = null;
+    const btnHeal = document.getElementById('btn-enable-heal');
+    const btnAttack = document.getElementById('btn-attack-heal');
+    
+    btnHeal.addEventListener('click', () => {
+      if (!healStop) {
+        healStop = HydeSecurity.modules.domGuard.protect('#demo-heal-target', () => {
+          console.warn('Tamper blocked!');
+        }, true);
+        btnHeal.textContent = 'Protection Active';
+        btnHeal.style.background = '#22c55e';
+        btnHeal.style.borderColor = '#22c55e';
+      }
+    });
+    
+    btnAttack.addEventListener('click', () => {
+      const target = document.getElementById('demo-heal-target');
+      if (target) {
+        target.remove(); // Attempt deletion
+      }
+    });
+
+    // --- Network Firewall Demo ---
+    let fwStop = null;
+    const btnFw = document.getElementById('btn-enable-fw');
+    const fwLog = document.getElementById('demo-fw-log');
+    
+    const appendLog = (msg, isErr = false) => {
+      const div = document.createElement('div');
+      div.style.color = isErr ? '#ef4444' : '#22c55e';
+      div.textContent = `> ${msg}`;
+      fwLog.appendChild(div);
+      fwLog.scrollTop = fwLog.scrollHeight;
+    };
+    
+    btnFw.addEventListener('click', () => {
+      if (!fwStop) {
+        fwStop = HydeSecurity.modules.networkFirewall.enable(['api.github.com'], (url) => {
+          appendLog(`BLOCKED unauthorized request: ${url}`, true);
+        });
+        btnFw.textContent = 'Firewall Active (api.github.com)';
+        btnFw.style.background = '#22c55e';
+        btnFw.style.borderColor = '#22c55e';
+        appendLog('Firewall rules applied.');
+      }
+    });
+    
+    document.getElementById('btn-fetch-good').addEventListener('click', async () => {
+      appendLog('Fetching https://api.github.com/users/tirth1107...');
+      try {
+        await fetch('https://api.github.com/users/tirth1107');
+        appendLog('Success! Domain allowed.');
+      } catch (e) {
+        appendLog('Failed to fetch.', true);
+      }
+    });
+    
+    document.getElementById('btn-fetch-bad').addEventListener('click', async () => {
+      appendLog('Fetching https://evil-hacker.com/steal...');
+      try {
+        await fetch('https://evil-hacker.com/steal');
+        appendLog('Success! (Warning: Firewall is OFF)', true);
+      } catch (e) {
+        appendLog('Fetch failed/blocked properly.', false);
+      }
+    });
+
+  </script>
+</body>
+</html>
