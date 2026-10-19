@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { expect, afterEach, vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {}
@@ -7,7 +7,8 @@ const localStorageMock = (() => {
     get length() {
       return Object.keys(store).length
     },
-    getItem: (key: string) => store[key] || null,
+    key: (i: number) => Object.keys(store)[i] ?? null,
+    getItem: (key: string) => (key in store ? store[key] : null),
     setItem: (key: string, value: string) => {
       store[key] = value.toString()
     },

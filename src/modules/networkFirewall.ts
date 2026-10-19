@@ -4,7 +4,19 @@
  * blocking unauthorized data exfiltration attempts (e.g. from XSS payloads).
  */
 
+let activeDisable: (() => void) | null = null
+
 export const networkFirewall = {
+  /** True while the firewall is wrapping fetch/XHR */
+  isEnabled() {
+    return activeDisable !== null
+  },
+
+  /** Restore the original fetch and XMLHttpRequest. Safe to call when not enabled. */
+  disable() {
+    if (activeDisable) activeDisable()
+  },
+
   /**
    * Initialize the firewall with a list of allowed domains.
    * @param allowedDomains Array of domain strings (e.g., ['api.my-app.com', 'google-analytics.com'])
@@ -13,6 +25,9 @@ export const networkFirewall = {
   enable(allowedDomains: string[], onBlocked?: (url: string) => void) {
     if (typeof window === 'undefined') return () => {};
 
+    // Calling enable() again replaces the old allowlist instead of wrapping twice
+    if (activeDisable) activeDisable();
+
     // Ensure current origin is always allowed
     const currentOrigin = window.location.origin;
     const whitelist = new Set([...allowedDomains, currentOrigin]);
@@ -20,7 +35,7 @@ export const networkFirewall = {
     const isAllowed = (urlStr: string) => {
       try {
         // Handle relative URLs
-        const url = urlStr.startsWith('http') ? new URL(urlStr) : new URL(urlStr, currentOrigin);
+        const url = new URL(urlStr, currentOrigin);
         
         // Exact match or subdomain match
         return Array.from(whitelist).some(allowed => 
@@ -68,9 +83,13 @@ export const networkFirewall = {
     };
 
     // Return a disable function to restore original APIs
-    return () => {
+    const disable = () => {
+      if (activeDisable !== disable) return; // already replaced or disabled
       window.fetch = originalFetch;
       window.XMLHttpRequest.prototype.open = originalXhrOpen;
+      activeDisable = null;
     };
+    activeDisable = disable;
+    return disable;
   }
 };

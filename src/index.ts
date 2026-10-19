@@ -46,11 +46,18 @@ const state = {
 }
 
 let removeWatermark: (() => void) | null = null
+let initialized = false
+
+const VERSION = typeof __HYDE_VERSION__ !== 'undefined' ? __HYDE_VERSION__ : '0.0.0-dev'
 
 const API = {
   init(cfg: Partial<HydeSecurityConfig> = {}) {
+    // Re-init applies the new config instead of being ignored by already-enabled modules
+    if (initialized) this.disableAll()
     state.config = { ...state.config, ...cfg }
     initLogger(state.config)
+    if (state.config.encryptionKey) encryption.encryption.setDefaultKey(state.config.encryptionKey)
+    initialized = true
     this.enableAll()
     log('initialized', state.config)
   },
@@ -63,10 +70,14 @@ const API = {
   
   enableAll() {
     state.enabled = true
-    const { mode, onThreatDetected, enableWatermark, appName, allowedIframes, enableAntiCopy, enableAntiPrint, enableAntiContextMenu, enableTabGuard, enableAntiScreenCapture, enableAntiIframe } = state.config
+    const { mode, onThreatDetected, enableWatermark, appName, allowedIframes, enableAntiCopy, enableAntiPrint, enableAntiContextMenu, enableTabGuard, enableAntiScreenCapture, enableAntiIframe, enableDebuggerTrap } = state.config
 
     if (mode === 'strict' || mode === 'balanced') {
-      antiDevtools.antiDevtools.enable({ onThreat: onThreatDetected, autoLock: mode === 'strict' })
+      antiDevtools.antiDevtools.enable({
+        onThreat: onThreatDetected,
+        autoLock: mode === 'strict',
+        debuggerTrap: enableDebuggerTrap ?? mode === 'strict'
+      })
       if (enableAntiIframe !== false) antiIframe.antiIframe.enable({ onThreat: onThreatDetected, allowedOrigins: allowedIframes })
     }
 
@@ -112,10 +123,12 @@ const API = {
   destroy() {
     this.disableAll()
     session.session.destroy?.()
+    networkFirewall.disable()
+    initialized = false
   },
 
   getVersion() {
-    return '1.5.0'
+    return VERSION
   },
   
   toast(msg: string) {
@@ -130,7 +143,7 @@ const API = {
       el.style.color = '#fff'
       el.style.zIndex = '999999'
       el.style.borderRadius = '4px'
-      el.innerText = msg
+      el.textContent = msg
       document.body.appendChild(el)
       setTimeout(() => el.remove(), 3000)
     } catch (e) { }

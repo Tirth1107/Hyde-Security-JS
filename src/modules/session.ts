@@ -8,6 +8,25 @@ let active = false
 
 const events: (keyof WindowEventMap)[] = ['click', 'keydown', 'mousemove', 'scroll']
 
+const CHANNEL_NAME = 'hyde_security_channel'
+const MSG_KEY = 'hyde_msg'
+
+function handleMessage(msg: unknown) {
+  if (msg === 'logout') {
+    storage.remove('hyde_session_active')
+    onExpire?.()
+  }
+}
+
+function storageListener(e: StorageEvent) {
+  if (e.key !== MSG_KEY || !e.newValue) return
+  try {
+    handleMessage(JSON.parse(e.newValue).msg)
+  } catch (err) {
+    handleMessage(e.newValue)
+  }
+}
+
 function reset() {
   if (idleTimer) clearTimeout(idleTimer)
   idleTimer = setTimeout(() => {
@@ -18,7 +37,7 @@ function reset() {
 
 export const session = {
   init(opts?: { timeoutMinutes?: number; onExpire?: () => void }) {
-    if (active) return
+    if (active || typeof window === 'undefined') return
     active = true
     
     if (opts?.timeoutMinutes) timeout = opts.timeoutMinutes * 60 * 1000
@@ -30,29 +49,35 @@ export const session = {
     storage.set('hyde_session_active', '1')
 
     // multi-tab logout
-    try {
-      channel = new BroadcastChannel('hyde_security_channel')
-      channel.onmessage = (m) => {
-        if (m.data === 'logout') {
-          storage.remove('hyde_session_active')
-          onExpire?.()
-        }
-      }
-      this.broadcast = (msg: string) => channel?.postMessage(msg)
-    } catch (e) {
-      this.broadcast = (msg: string) => localStorage.setItem('hyde_msg', msg)
-      window.addEventListener('storage', this._storageListener)
-    }
-  },
-  
-  _storageListener(e: StorageEvent) {
-    if (e.key === 'hyde_msg' && e.newValue === 'logout') {
-      storage.remove('hyde_session_active')
-      onExpire?.()
+    if (typeof BroadcastChannel !== 'undefined') {
+      channel = new BroadcastChannel(CHANNEL_NAME)
+      channel.onmessage = (m) => handleMessage(m.data)
+    } else {
+      window.addEventListener('storage', storageListener)
     }
   },
 
-  broadcast(msg: string) {},
+  /** Send a message to the other tabs (e.g. 'logout') */
+  broadcast(msg: string) {
+    if (typeof window === 'undefined') return
+    if (channel) {
+      channel.postMessage(msg)
+      return
+    }
+    if (typeof BroadcastChannel !== 'undefined') {
+      // Not initialised yet: open a short-lived channel just to send
+      const tmp = new BroadcastChannel(CHANNEL_NAME)
+      tmp.postMessage(msg)
+      tmp.close()
+      return
+    }
+    try {
+      // Fallback: storage events fire in other tabs. Value includes a timestamp
+      // so sending the same message twice still triggers an event.
+      localStorage.setItem(MSG_KEY, JSON.stringify({ msg, t: Date.now() }))
+      localStorage.removeItem(MSG_KEY)
+    } catch (e) { }
+  },
 
   end() {
     storage.remove('hyde_session_active')
@@ -63,14 +88,15 @@ export const session = {
     active = false
     if (idleTimer) clearTimeout(idleTimer)
     idleTimer = null
-    
+    if (typeof window === 'undefined') return
+
     events.forEach(ev => window.removeEventListener(ev, reset))
     
     if (channel) {
       channel.close()
       channel = null
     }
-    window.removeEventListener('storage', this._storageListener)
+    window.removeEventListener('storage', storageListener)
   },
 
   isActive() {

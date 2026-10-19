@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `encryptionKey` config option and `encryption.setDefaultKey()` / `hasCustomKey()` — set one key for the whole app.
+- `enableDebuggerTrap` config option and `antiDevtools.enable({ debuggerTrap })`.
+- `antiDevtools.isEnabled()`, `networkFirewall.disable()` / `isEnabled()`.
+- `network.createClient()` options `retries` and `retryNonIdempotent`.
+- Separate `@tirth1107/hyde-security-js/react` build entry (`dist/react.*`).
+- ESLint 9 setup (`npm run lint`), `.gitattributes` for LF line endings.
+- 37 new tests: domGuard, networkFirewall, session, encryption keys, antiDevtools listeners, Provider re-renders, API, and helper modules.
+
+### Fixed
+- **antiDevtools** — added a new detector listener on every `enable()` and never removed it, so detections fired many times after `setMode()` or remounts.
+- **antiDevtools** — the `debugger` trap paused the page every 1.5s in balanced mode. It now runs only in strict mode (or when enabled).
+- **antiDevtools** — `detect()` always returned `false`; it now reflects the last detector result.
+- **HydeSecurityProvider** — an inline `config={{...}}` re-initialized on every render. It now re-inits only when a setting changes and always calls the latest `onThreatDetected`.
+- **init()** — calling it again was ignored by already-running modules; it now applies the new config.
+- **domGuard** — self-healing could fire twice for one removal and failed silently if the parent changed. Rewritten; reports `healed: false` when it can't restore.
+- **networkFirewall** — calling `enable()` twice wrapped `fetch` twice and broke `disable`. `destroy()` now also turns it off.
+- **session** — `broadcast()` did nothing before `init()`; the storage-event fallback could miss repeated messages.
+- **encryption** — `deriveKey()` without a salt used a random salt, so it never gave the same key twice.
+- **network** — retried POST/PATCH on 5xx, which could create duplicate records on the server. Only safe methods retry by default.
+- **Build** — every dependency was bundled into the ESM/CJS files (1.25 MB). They are now left to the app's bundler (~35–50 KB). UMD still bundles everything.
+- **Build** — the ESM file used `.js` in a non-`"type": "module"` package, so Node's `import` treated it as CommonJS. Renamed to `.esm.mjs`.
+- `getVersion()` was hardcoded; it now comes from `package.json` at build time.
+- Lock overlay and toast use `textContent` instead of `innerText`.
+- Demo website called `init()` twice and passed an empty inline config.
+
+### Changed
+- Using the built-in encryption key or signing key now logs a one-time console warning.
+- Removed `vite.website.config.ts`; `npm run build:website` now runs the website's own build.
+
 ## [1.5.0] - 2026-06-29
 
 ### Added (Pro Features)

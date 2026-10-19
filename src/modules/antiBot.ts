@@ -1,5 +1,3 @@
-import { uid } from '../core/utils'
-
 export const antiBot = {
   /**
    * Detect superhuman typing speeds on an input element.

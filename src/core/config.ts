@@ -29,6 +29,13 @@ export interface HydeSecurityConfig {
   enableAntiScreenCapture?: boolean
   /** Enable clickjacking / iframe detection (default: true in strict and balanced modes) */
   enableAntiIframe?: boolean
+  /**
+   * Run the `debugger` timing trap in anti-devtools. It pauses the page for anyone
+   * with DevTools open (default: true in strict mode only)
+   */
+  enableDebuggerTrap?: boolean
+  /** Default key for encryption helpers. Without it a public built-in key is used. */
+  encryptionKey?: string
 }
 
 export interface HydeSecurityEvent {
@@ -56,4 +63,6 @@ export const defaultConfig: HydeSecurityConfig = {
   enableTabGuard: undefined,
   enableAntiScreenCapture: undefined,
   enableAntiIframe: undefined,
+  enableDebuggerTrap: undefined,
+  encryptionKey: undefined,
 }

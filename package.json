@@ -3,7 +3,7 @@
   "version": "1.5.0",
   "description": "Client-side deterrence and security helpers for web apps — 60+ features including anti-devtools, XSS prevention, encryption, session management, bot detection, and more.",
   "main": "dist/hyde-security-js.cjs.js",
-  "module": "dist/hyde-security-js.esm.js",
+  "module": "dist/hyde-security-js.esm.mjs",
   "unpkg": "dist/hyde-security-js.umd.js",
   "types": "dist/index.d.ts",
   "publishConfig": {
@@ -11,14 +11,14 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/hyde-security-js.esm.js",
-      "require": "./dist/hyde-security-js.cjs.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/hyde-security-js.esm.mjs",
+      "require": "./dist/hyde-security-js.cjs.js"
     },
     "./react": {
-      "import": "./dist/hyde-security-js.esm.js",
-      "require": "./dist/hyde-security-js.cjs.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.esm.mjs",
+      "require": "./dist/react.cjs.js"
     }
   },
   "files": [
@@ -28,14 +28,14 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "vite build && tsc --emitDeclarationOnly",
-    "build:website": "vite build --config vite.website.config.ts",
+    "build": "vite build && vite build --mode umd && tsc --emitDeclarationOnly",
+    "build:website": "npm --prefix website run build",
     "dev": "vite",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "type-check": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint .",
     "prepublishOnly": "npm run build",
     "clean": "rimraf dist"
   },
@@ -95,6 +95,7 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@types/crypto-js": "^4.1.1",
@@ -109,9 +110,12 @@
     "@types/zxcvbn": "^4.4.5",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/ui": "^1.1.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
     "jsdom": "^23.0.1",
     "react": "^18.2.0",
     "typescript": "^5.2.2",
+    "typescript-eslint": "^8.71.2",
     "vite": "^5.0.8",
     "vitest": "^1.1.0"
   }
