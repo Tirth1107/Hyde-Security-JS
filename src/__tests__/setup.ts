@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import { afterEach, vi } from 'vitest'
+import { webcrypto } from 'node:crypto'
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {}
@@ -24,16 +25,10 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 Object.defineProperty(window, 'sessionStorage', { value: localStorageMock })
 
-Object.defineProperty(window, 'crypto', {
-  value: {
-    getRandomValues: (arr: Uint8Array) => {
-      for (let i = 0; i < arr.length; i++) {
-        arr[i] = Math.floor(Math.random() * 256)
-      }
-      return arr
-    },
-  },
-})
+// Real Web Crypto (subtle included) from Node
+Object.defineProperty(window, 'crypto', { value: webcrypto, configurable: true })
+Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true })
+if (typeof (globalThis as any).CryptoKey === 'undefined') (globalThis as any).CryptoKey = (webcrypto as any).CryptoKey
 
 afterEach(() => {
   vi.clearAllMocks()

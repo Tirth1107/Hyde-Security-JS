@@ -1,14 +1,10 @@
-import { uid, now } from '../core/utils'
-import { HydeSecurityEvent } from '../core/config'
+import { createReporter, ThreatListener } from '../core/events'
+
+const reporter = createReporter('antiDebug', 'critical')
 
 let enabled = false
-let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
 
-function report(type: string, details?: Record<string, any>) {
-  const ev: HydeSecurityEvent = { id: uid(), type, severity: 'critical', details, timestamp: now() }
-  onThreat?.(ev)
-  return ev
-}
+const report = (type: string, details?: Record<string, any>) => reporter.report(type, details)
 
 function startTimingTrap() {
   let last = performance.now()
@@ -24,10 +20,10 @@ function startTimingTrap() {
 let timerId: any = null
 
 export const antiDebug = {
-  enable(opts?: { onThreat?: (ev: HydeSecurityEvent) => void }) {
+  enable(opts?: { onThreat?: ThreatListener }) {
     if (enabled) return
     enabled = true
-    onThreat = opts?.onThreat
+    reporter.setCallback(opts?.onThreat)
     timerId = startTimingTrap()
   },
   disable() {

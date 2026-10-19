@@ -1,45 +1,33 @@
-let originalPush: typeof history.pushState | null = null
-let originalReplace: typeof history.replaceState | null = null
+import { createReporter, ThreatListener } from '../core/events'
+import { patchMethod, PatchGroup } from '../core/hooks'
+
+const reporter = createReporter('routerGuard', 'info')
+let group: PatchGroup | null = null
 let popHandler: ((e: PopStateEvent) => void) | null = null
 
 export const routerGuard = {
-  enable(onThreat: (ev: any) => void) {
-    if (originalPush) return () => {} // Already enabled
-
-    originalPush = history.pushState
-    originalReplace = history.replaceState
-
-    history.pushState = function (...args) {
-      onThreat({ id: 'router_push', type: 'navigation', severity: 'info', details: { url: args[2] }, timestamp: Date.now() })
-      return originalPush!.apply(this, args)
-    }
-
-    history.replaceState = function (...args) {
-      onThreat({ id: 'router_replace', type: 'navigation', severity: 'info', details: { url: args[2] }, timestamp: Date.now() })
-      return originalReplace!.apply(this, args)
-    }
-    
-    popHandler = (e: PopStateEvent) => {
-      onThreat({ id: 'router_pop', type: 'navigation', severity: 'info', details: { state: e.state }, timestamp: Date.now() })
-    }
-    
+  /** Report every client-side navigation (pushState / replaceState / back-forward) */
+  enable(onThreat?: ThreatListener) {
+    if (typeof window === 'undefined' || group) return () => this.disable()
+    reporter.setCallback(onThreat)
+    group = new PatchGroup()
+    group.add(patchMethod(history, 'pushState', original => function (this: any, ...args: any[]) {
+      reporter.report('navigation', { method: 'pushState', url: args[2] })
+      return original.apply(this, args)
+    }))
+    group.add(patchMethod(history, 'replaceState', original => function (this: any, ...args: any[]) {
+      reporter.report('navigation', { method: 'replaceState', url: args[2] })
+      return original.apply(this, args)
+    }))
+    popHandler = (e: PopStateEvent) => reporter.report('navigation', { method: 'popstate', state: e.state })
     window.addEventListener('popstate', popHandler)
-    
-    return this.disable.bind(this)
+    return () => this.disable()
   },
-  
+
   disable() {
-    if (originalPush) {
-      history.pushState = originalPush
-      originalPush = null
-    }
-    if (originalReplace) {
-      history.replaceState = originalReplace
-      originalReplace = null
-    }
-    if (popHandler) {
-      window.removeEventListener('popstate', popHandler)
-      popHandler = null
-    }
+    group?.restoreAll()
+    group = null
+    if (popHandler) window.removeEventListener('popstate', popHandler)
+    popHandler = null
   }
 }

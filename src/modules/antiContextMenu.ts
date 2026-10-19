@@ -1,14 +1,10 @@
-import { uid, now } from '../core/utils'
-import { HydeSecurityEvent } from '../core/config'
+import { createReporter, ThreatListener } from '../core/events'
+
+const reporter = createReporter('antiContextMenu', 'info')
 
 let enabled = false
-let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
 
-function report(type: string, details?: Record<string, any>) {
-  const ev: HydeSecurityEvent = { id: uid(), type, severity: 'info', details, timestamp: now() }
-  onThreat?.(ev)
-  return ev
-}
+const report = (type: string, details?: Record<string, any>) => reporter.report(type, details)
 
 function handler(e: MouseEvent) {
   e.preventDefault()
@@ -16,10 +12,10 @@ function handler(e: MouseEvent) {
 }
 
 export const antiContextMenu = {
-  enable(opts?: { onThreat?: (ev: HydeSecurityEvent) => void }) {
+  enable(opts?: { onThreat?: ThreatListener }) {
     if (enabled) return
     enabled = true
-    onThreat = opts?.onThreat
+    reporter.setCallback(opts?.onThreat)
     document.addEventListener('contextmenu', handler, true)
   },
   disable() {

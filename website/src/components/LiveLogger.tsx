@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { X, Terminal } from 'lucide-react'
+import { HydeSecurity } from 'hyde-security-js/react'
 
 interface LogEntry {
   id: string
@@ -15,24 +16,19 @@ const LiveLogger = ({ open, onClose }: { open: boolean, onClose: () => void }) =
   const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleLog = (e: any) => {
-      const { source, type, detail, severity } = e.detail || {}
-      
-      let level = 'info'
-      if (severity === 'high' || severity === 'critical' || type === 'error') level = 'error'
-      if (severity === 'low' || type === 'success') level = 'success'
-
-      const newLog: LogEntry = {
-        id: Math.random().toString(36).substr(2, 9),
-        time: new Date().toLocaleTimeString(),
-        source: source || 'system',
-        type: type || 'event',
-        msg: detail?.msg || JSON.stringify(detail) || 'Event triggered',
-        level: level as any
-      }
-
-      setLogs(prev => [...prev, newLog])
-    }
+    // Every library threat arrives through the central event bus
+    const offThreats = HydeSecurity.on('*', ev => {
+      const level = ev.severity === 'critical' ? 'error' : ev.severity === 'warning' ? 'warning' : 'info'
+      const details = ev.details ? ` ${JSON.stringify(ev.details).slice(0, 160)}` : ''
+      setLogs(prev => [...prev.slice(-300), {
+        id: ev.id,
+        time: new Date(ev.timestamp).toLocaleTimeString(),
+        source: ev.source || 'system',
+        type: ev.type,
+        msg: `${ev.type}${details}`,
+        level
+      }])
+    })
 
     // A custom listener for our internal demo logs (since the actual library uses log() we'll dispatch custom events from demos)
     const handleDemoLog = (e: any) => {
@@ -46,10 +42,9 @@ const LiveLogger = ({ open, onClose }: { open: boolean, onClose: () => void }) =
       }])
     }
 
-    window.addEventListener('hyde:threat', handleLog)
     window.addEventListener('demo:log', handleDemoLog)
     return () => {
-      window.removeEventListener('hyde:threat', handleLog)
+      offThreats()
       window.removeEventListener('demo:log', handleDemoLog)
     }
   }, [])

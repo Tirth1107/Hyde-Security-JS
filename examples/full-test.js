@@ -97,18 +97,19 @@
         `,
         action: () => {
           let lastCipher = '';
-          window.doEncrypt = () => {
+          window.doEncrypt = async () => {
             const raw = el('enc-input').value;
-            const key = el('enc-key').value || undefined;
-            lastCipher = HS.encryptText(raw, key);
+            const key = el('enc-key').value;
+            if (!key) return log('encryption', 'v2 needs a key — enter a passphrase', 'error');
+            lastCipher = await HS.encryptText(raw, key);
             el('enc-res').textContent = lastCipher;
             el('enc-res').style.color = '#22c55e';
             log('encryption', `Encrypted ${raw.length} chars → ${lastCipher.length} chars cipher`, 'success');
           };
-          window.doDecrypt = () => {
+          window.doDecrypt = async () => {
             if (!lastCipher) return log('encryption', 'Encrypt something first!', 'error');
-            const key = el('enc-key').value || undefined;
-            const plain = HS.decryptText(lastCipher, key);
+            const key = el('enc-key').value;
+            const plain = key ? await HS.decryptText(lastCipher, key) : null;
             el('enc-res').textContent = plain || '[Decryption failed — wrong key?]';
             el('enc-res').style.color = plain ? '#dbe8f5' : '#ef4444';
             log('encryption', plain ? 'Decrypted successfully' : 'Decryption failed', plain ? 'success' : 'error');
@@ -455,8 +456,8 @@
             HS.modules.storage.set(el('st-key').value, el('st-val').value);
             log('storage', `Set "${el('st-key').value}" = "${el('st-val').value}"`, 'success');
           };
-          window.stSetEnc = () => {
-            HS.modules.storage.set(el('st-key').value, el('st-val').value, { encrypt: true });
+          window.stSetEnc = async () => {
+            await HS.modules.storage.setEncrypted(el('st-key').value, el('st-val').value, { key: 'example-passphrase' });
             log('storage', `Set "${el('st-key').value}" (encrypted)`, 'success');
           };
           window.stGet = () => {
@@ -465,8 +466,8 @@
             el('st-result').style.color = v !== null ? '#22c55e' : '#ef4444';
             log('storage', `Get "${el('st-key').value}" → ${v !== null ? String(v).substring(0, 50) : 'null'}`, v !== null ? 'success' : 'error');
           };
-          window.stGetDec = () => {
-            const v = HS.modules.storage.get(el('st-key').value, { decrypt: true });
+          window.stGetDec = async () => {
+            const v = await HS.modules.storage.getEncrypted(el('st-key').value, { key: 'example-passphrase' });
             el('st-result').textContent = v || 'null (not found or decryption failed)';
             el('st-result').style.color = v ? '#22c55e' : '#ef4444';
             log('storage', `Get+Decrypt "${el('st-key').value}" → ${v || 'null'}`, v ? 'success' : 'error');

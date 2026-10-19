@@ -1,54 +1,81 @@
 /**
- * Default configuration and types for HydeSecurity
+ * Configuration and types for HydeSecurity v2
  */
+import type { HydeSecurityEvent, ThreatListener } from './events'
+import type { KeyInput } from '../modules/encryption'
+import type { ScriptGuardOptions } from '../modules/scriptGuard'
+import type { SkimmerGuardOptions } from '../modules/skimmerGuard'
+import type { NetworkFirewallOptions } from '../modules/networkFirewall'
+import type { ClipboardGuardOptions } from '../modules/clipboardGuard'
+import type { AgentShieldOptions } from '../modules/agentShield'
+import type { PhishingGuardOptions } from '../modules/phishingGuard'
+import type { MessageGuardOptions } from '../modules/messageGuard'
+import type { PrototypeGuardOptions } from '../modules/prototypeGuard'
+import type { TrustedTypesOptions } from '../modules/trustedTypes'
+import type { ReportingOptions } from '../modules/reporting'
+
+export type { HydeSecurityEvent, ThreatListener }
 
 export type Mode = 'dev' | 'balanced' | 'strict'
+
+export interface LockdownOptions {
+  /** Threat types or 'source:<module>' that trigger lockdown */
+  on: string[]
+  /** Message shown on the lock overlay */
+  message?: string
+  /** Show an overlay (default true) */
+  overlay?: boolean
+}
 
 export interface HydeSecurityConfig {
   /** App name used for logging and watermark text */
   appName?: string
-  /** Security level: 'dev' (minimal), 'balanced' (recommended), 'strict' (all features) */
+  /** 'dev' (minimal), 'balanced' (recommended), 'strict' (everything) */
   mode?: Mode
   /** Enable console logging */
   enableLogs?: boolean
-  /** Callback fired when a security threat is detected */
+  /** Called for every threat from every module */
   onThreatDetected?: (ev: HydeSecurityEvent) => void
-  /** Add a canvas watermark overlay */
-  enableWatermark?: boolean
-  /** Allowed iframe origins for anti-iframe protection */
-  allowedIframes?: string[]
-  /** Enable copy/cut/drag blocking (default: true in strict mode) */
-  enableAntiCopy?: boolean
-  /** Enable print blocking (default: true in strict mode) */
-  enableAntiPrint?: boolean
-  /** Enable right-click blocking (default: true in strict mode) */
-  enableAntiContextMenu?: boolean
-  /** Enable tab visibility guard with blur overlay (default: true in strict mode) */
-  enableTabGuard?: boolean
-  /** Enable screenshot deterrence (default: true in strict mode) */
-  enableAntiScreenCapture?: boolean
-  /** Enable clickjacking / iframe detection (default: true in strict and balanced modes) */
-  enableAntiIframe?: boolean
-  /**
-   * Run the `debugger` timing trap in anti-devtools. It pauses the page for anyone
-   * with DevTools open (default: true in strict mode only)
-   */
-  enableDebuggerTrap?: boolean
-  /** Default key for encryption helpers. Without it a public built-in key is used. */
-  encryptionKey?: string
-}
+  /** Default key (passphrase or CryptoKey) for encryption helpers */
+  encryptionKey?: KeyInput
 
-export interface HydeSecurityEvent {
-  /** Unique event ID */
-  id: string
-  /** Event type identifier */
-  type: string
-  /** Severity level */
-  severity: 'info' | 'warning' | 'critical'
-  /** Additional details */
-  details?: Record<string, any>
-  /** Unix timestamp */
-  timestamp: number
+  // ── v1 deterrents ───────────────────────────────────────────────
+  enableWatermark?: boolean
+  allowedIframes?: string[]
+  enableAntiCopy?: boolean
+  enableAntiPrint?: boolean
+  enableAntiContextMenu?: boolean
+  enableTabGuard?: boolean
+  enableAntiScreenCapture?: boolean
+  enableAntiIframe?: boolean
+  /** DevTools detection (default: strict only) */
+  enableAntiDevtools?: boolean
+  /** `debugger` pause trap (default: strict only) */
+  enableDebuggerTrap?: boolean
+
+  // ── v2 guards: true / options to turn on, false to turn off ─────
+  /** Script inventory + allowlist (PCI DSS 6.4.3 / 11.6.1). Default: strict (report) */
+  scriptGuard?: boolean | ScriptGuardOptions
+  /** Formjacking / skimmer detection on sensitive fields. Default: strict (report) */
+  skimmerGuard?: boolean | SkimmerGuardOptions
+  /** Outbound allowlist. Off unless configured. */
+  networkFirewall?: false | NetworkFirewallOptions
+  /** ClickFix + clipboard hijack blocking. Default: balanced/strict */
+  clipboardGuard?: boolean | ClipboardGuardOptions
+  /** AI-agent prompt-injection scanner. Default: strict (report) */
+  agentShield?: boolean | AgentShieldOptions
+  /** Clone detection, credential forms, BitB, tabnabbing. Default: balanced/strict */
+  phishingGuard?: boolean | PhishingGuardOptions
+  /** postMessage firewall. Default: balanced/strict in report mode for same-origin only */
+  messageGuard?: false | MessageGuardOptions
+  /** Prototype pollution + DOM clobbering. Default: balanced/strict (monitor) */
+  prototypeGuard?: boolean | PrototypeGuardOptions
+  /** Trusted Types default policy. Off unless configured. */
+  trustedTypes?: boolean | TrustedTypesOptions
+  /** Send threats to your backend. Off unless configured. */
+  reporting?: ReportingOptions
+  /** Automatic lockdown when matching threats fire */
+  lockdown?: false | LockdownOptions
 }
 
 export const defaultConfig: HydeSecurityConfig = {
@@ -56,13 +83,5 @@ export const defaultConfig: HydeSecurityConfig = {
   mode: 'balanced',
   enableLogs: false,
   enableWatermark: false,
-  allowedIframes: [],
-  enableAntiCopy: undefined,
-  enableAntiPrint: undefined,
-  enableAntiContextMenu: undefined,
-  enableTabGuard: undefined,
-  enableAntiScreenCapture: undefined,
-  enableAntiIframe: undefined,
-  enableDebuggerTrap: undefined,
-  encryptionKey: undefined,
+  allowedIframes: []
 }

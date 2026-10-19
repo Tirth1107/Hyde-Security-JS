@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Shield, ShieldAlert, Activity, EyeOff, LayoutGrid, Terminal, Key, Ghost, Cpu, Fingerprint } from 'lucide-react'
-import { HydeSecurityProvider, useHydeSecurity } from 'hyde-security-js'
+import { Shield, ShieldAlert, Activity, EyeOff, LayoutGrid, Terminal, Key, Ghost, Cpu, Sparkles } from 'lucide-react'
+import { HydeSecurity, HydeSecurityProvider, useHydeSecurity } from 'hyde-security-js/react'
 import LiveLogger from './components/LiveLogger'
 import FeatureCard from './components/FeatureCard'
 
@@ -31,6 +31,10 @@ import ObfuscatorDemo from './components/demos/ObfuscatorDemo'
 import DeviceDemo from './components/demos/DeviceDemo'
 import FingerprintDemo from './components/demos/FingerprintDemo'
 import WatermarkDemo from './components/demos/WatermarkDemo'
+import {
+  SecurityAuditDemo, ScriptGuardDemo, SkimmerDemo, ClickFixDemo, AgentShieldDemo,
+  PhishingDemo, PrototypeDemo, MessageGuardDemo, PasskeyDemo, LockdownDemo
+} from './components/demos/GuardDemos'
 
 const DashboardContent = () => {
   const security = useHydeSecurity()
@@ -48,6 +52,9 @@ const DashboardContent = () => {
         <div className="sidebar-nav">
           <div className={`nav-item ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>
             <LayoutGrid size={18} /> All Features
+          </div>
+          <div className={`nav-item ${activeTab === 'v2' ? 'active' : ''}`} onClick={() => setActiveTab('v2')}>
+            <Sparkles size={18} /> v2 Guards
           </div>
           <div className={`nav-item ${activeTab === 'core' ? 'active' : ''}`} onClick={() => setActiveTab('core')}>
             <Shield size={18} /> Core
@@ -77,7 +84,7 @@ const DashboardContent = () => {
         <header className="topbar">
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Interactive Test Suite</h2>
-            <p className="card-desc">Try out the library features safely</p>
+            <p className="card-desc">v{HydeSecurity.getVersion()} — try every feature safely</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button className="secondary" onClick={() => security.setMode?.('dev')}>Dev Mode</button>
@@ -87,6 +94,22 @@ const DashboardContent = () => {
 
         <div className="dashboard-scroll">
           <div className="grid-features">
+            {/* V2 GUARDS */}
+            {(activeTab === 'all' || activeTab === 'v2') && (
+              <>
+                <FeatureCard title="Security Audit" desc="Grade this page's security posture with fixes." badge="v2" badgeType="core"><SecurityAuditDemo /></FeatureCard>
+                <FeatureCard title="Script Guard" desc="Supply-chain script inventory & blocking (PCI DSS 6.4.3 / 11.6.1)." badge="v2" badgeType="tamper"><ScriptGuardDemo /></FeatureCard>
+                <FeatureCard title="Skimmer Guard" desc="Magecart / formjacking defense for card & password fields." badge="v2" badgeType="data"><SkimmerDemo /></FeatureCard>
+                <FeatureCard title="ClickFix Guard" desc="Blocks fake-CAPTCHA clipboard command payloads." badge="v2" badgeType="detect"><ClickFixDemo /></FeatureCard>
+                <FeatureCard title="AI Agent Shield" desc="Finds hidden prompt injections aimed at AI browser agents." badge="v2" badgeType="detect"><AgentShieldDemo /></FeatureCard>
+                <FeatureCard title="Phishing Guard" desc="Lookalike domains, site clones, Browser-in-the-Browser overlays." badge="v2" badgeType="auth"><PhishingDemo /></FeatureCard>
+                <FeatureCard title="Prototype Guard" desc="Prototype pollution monitor + safe merge/parse." badge="v2" badgeType="tamper"><PrototypeDemo /></FeatureCard>
+                <FeatureCard title="Message Guard" desc="postMessage with exact origins; refuses '*'." badge="v2" badgeType="core"><MessageGuardDemo /></FeatureCard>
+                <FeatureCard title="Passkeys" desc="WebAuthn + PRF passkey-derived encryption keys." badge="v2" badgeType="auth"><PasskeyDemo /></FeatureCard>
+                <FeatureCard title="Lockdown" desc="Emergency mode on critical threats." badge="v2" badgeType="privacy"><LockdownDemo /></FeatureCard>
+              </>
+            )}
+
             {/* CORE */}
             {(activeTab === 'all' || activeTab === 'core') && (
               <>
@@ -124,8 +147,8 @@ const DashboardContent = () => {
             {(activeTab === 'all' || activeTab === 'data') && (
               <>
                 <FeatureCard title="Network Firewall" desc="Intercepts fetch/XHR to block exfiltration." badge="Data" badgeType="data"><NetworkFirewallDemo /></FeatureCard>
-                <FeatureCard title="AES Encryption" desc="Encrypt & decrypt text using AES-256." badge="Data" badgeType="data"><EncryptionDemo /></FeatureCard>
-                <FeatureCard title="Secure Storage" desc="Encrypted localStorage with fallback." badge="Data" badgeType="data"><StorageDemo /></FeatureCard>
+                <FeatureCard title="AES-GCM Encryption" desc="Web Crypto AES-256-GCM with PBKDF2 600k." badge="Data" badgeType="data"><EncryptionDemo /></FeatureCard>
+                <FeatureCard title="Secure Storage" desc="AES-GCM encrypted localStorage with TTL." badge="Data" badgeType="data"><StorageDemo /></FeatureCard>
                 <FeatureCard title="Cookie Management" desc="Secure cookie operations with SameSite." badge="Data" badgeType="data"><CookieDemo /></FeatureCard>
               </>
             )}

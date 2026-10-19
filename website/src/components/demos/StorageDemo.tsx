@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useHydeSecurity } from 'hyde-security-js'
+import { useHydeSecurity } from 'hyde-security-js/react'
 import { emitLog } from '../LiveLogger'
 
 const StorageDemo = () => {
@@ -13,9 +13,11 @@ const StorageDemo = () => {
     emitLog('storage', `Set "${key}" = "${val}"`, 'success')
   }
 
-  const stSetEnc = () => {
-    (security as any).modules?.storage?.set(key, val, { encrypt: true })
-    emitLog('storage', `Set "${key}" (encrypted)`, 'success')
+  const PASS = 'demo-storage-passphrase'
+
+  const stSetEnc = async () => {
+    await security.modules.storage.setEncrypted(key, val, { key: PASS })
+    emitLog('storage', `Set "${key}" (AES-GCM encrypted)`, 'success')
   }
 
   const stGet = () => {
@@ -29,8 +31,8 @@ const StorageDemo = () => {
     }
   }
 
-  const stGetDec = () => {
-    const v = (security as any).modules?.storage?.get(key, { decrypt: true })
+  const stGetDec = async () => {
+    const v = await security.modules.storage.getEncrypted(key, { key: PASS })
     if (v) {
       setResult({ text: String(v), type: 'success' })
       emitLog('storage', `Get+Decrypt "${key}" → ${v}`, 'success')

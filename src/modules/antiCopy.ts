@@ -1,14 +1,10 @@
-import { uid, now } from '../core/utils'
-import { HydeSecurityEvent } from '../core/config'
+import { createReporter, ThreatListener } from '../core/events'
+
+const reporter = createReporter('antiCopy', 'warning')
 
 let enabled = false
-let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
 
-function report(type: string, details?: Record<string, any>) {
-  const ev: HydeSecurityEvent = { id: uid(), type, severity: 'warning', details, timestamp: now() }
-  onThreat?.(ev)
-  return ev
-}
+const report = (type: string, details?: Record<string, any>) => reporter.report(type, details)
 
 function handleCopy(e: ClipboardEvent) {
   e.preventDefault()
@@ -26,10 +22,10 @@ function handleDragStart(e: DragEvent) {
 }
 
 export const antiCopy = {
-  enable(opts?: { onThreat?: (ev: HydeSecurityEvent) => void; disableSelection?: boolean }) {
+  enable(opts?: { onThreat?: ThreatListener; disableSelection?: boolean }) {
     if (enabled) return
     enabled = true
-    onThreat = opts?.onThreat
+    reporter.setCallback(opts?.onThreat)
     document.addEventListener('copy', handleCopy, true)
     document.addEventListener('cut', handleCut, true)
     document.addEventListener('dragstart', handleDragStart, true)

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useHydeSecurity } from 'hyde-security-js'
+import { useHydeSecurity } from 'hyde-security-js/react'
 import { emitLog } from '../LiveLogger'
 
 const EncryptionDemo = () => {
@@ -9,22 +9,24 @@ const EncryptionDemo = () => {
   const [result, setResult] = useState<{ text: string, type: 'success' | 'error' | 'info' } | null>(null)
   const [lastCipher, setLastCipher] = useState('')
 
-  const doEncrypt = () => {
-    const cipher = (security as any).security?.encryptText?.(input, key || undefined)
-    if (cipher) {
-      setLastCipher(cipher)
-      setResult({ text: cipher, type: 'success' })
-      emitLog('encryption', `Encrypted ${input.length} chars → ${cipher.length} chars cipher`, 'success')
+  const doEncrypt = async () => {
+    if (!key) {
+      setResult({ text: 'v2 needs a key — there is no built-in default', type: 'error' })
+      return
     }
+    const cipher = await security.security.encryptText(input, key)
+    setLastCipher(cipher)
+    setResult({ text: cipher, type: 'success' })
+    emitLog('encryption', `AES-256-GCM: ${input.length} chars → ${cipher.length} chars (PBKDF2 600k)`, 'success')
   }
 
-  const doDecrypt = () => {
+  const doDecrypt = async () => {
     if (!lastCipher) {
       emitLog('encryption', 'Encrypt something first!', 'error')
       return
     }
-    const plain = (security as any).security?.decryptText?.(lastCipher, key || undefined)
-    if (plain) {
+    const plain = key ? await security.security.decryptText(lastCipher, key) : null
+    if (plain !== null) {
       setResult({ text: plain, type: 'success' })
       emitLog('encryption', 'Decrypted successfully', 'success')
     } else {
@@ -39,7 +41,7 @@ const EncryptionDemo = () => {
         <input 
           value={key} 
           onChange={e => setKey(e.target.value)}
-          placeholder="Encryption key (optional)" 
+          placeholder="Passphrase (required)" 
           style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '6px 10px', borderRadius: 4, outline: 'none' }}
         />
         <input 

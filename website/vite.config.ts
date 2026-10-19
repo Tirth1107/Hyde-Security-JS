@@ -11,8 +11,12 @@ export default defineConfig({
     __HYDE_VERSION__: JSON.stringify(pkg.version)
   },
   resolve: {
-    alias: {
-      'hyde-security-js': path.resolve(__dirname, '../src/index.ts')
-    }
+    // Library source in ../src would otherwise pick up the root's React copy
+    dedupe: ['react', 'react-dom'],
+    // Use the library source directly (most specific path first)
+    alias: [
+      { find: 'hyde-security-js/react', replacement: path.resolve(__dirname, '../src/react.ts') },
+      { find: 'hyde-security-js', replacement: path.resolve(__dirname, '../src/index.ts') }
+    ]
   }
 })

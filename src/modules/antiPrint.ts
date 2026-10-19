@@ -1,61 +1,49 @@
+import { createReporter, ThreatListener } from '../core/events'
+
+const reporter = createReporter('antiPrint', 'warning')
+
+let enabled = false
 let styleEl: HTMLStyleElement | null = null
-let beforePrint: (() => void) | null = null
-let afterPrint: (() => void) | null = null
-let keydownHandler: ((e: KeyboardEvent) => void) | null = null
+
+function beforePrint() {
+  document.body.style.filter = 'blur(10px)'
+  reporter.report('print_attempt', { method: 'beforeprint' })
+}
+
+function afterPrint() {
+  document.body.style.filter = ''
+}
+
+function keydownHandler(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+    e.preventDefault()
+    reporter.report('print_attempt', { method: 'shortcut' })
+  }
+}
 
 export const antiPrint = {
-  enable(opts?: { onThreat?: (ev: any) => void }) {
-    if (typeof window === 'undefined') return
+  enable(opts?: { onThreat?: ThreatListener }) {
+    if (typeof window === 'undefined' || enabled) return
+    enabled = true
+    reporter.setCallback(opts?.onThreat)
 
-    // Inject CSS to hide all content during printing
-    if (!styleEl) {
-      styleEl = document.createElement('style')
-      styleEl.innerHTML = `@media print { body { display: none !important; } }`
-      document.head.appendChild(styleEl)
-    }
-
-    beforePrint = () => {
-      document.body.style.filter = 'blur(10px)'
-      opts?.onThreat?.({ id: 'print', type: 'print', severity: 'warning', timestamp: Date.now() })
-    }
-    
-    afterPrint = () => {
-      document.body.style.filter = ''
-    }
-
-    keydownHandler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault()
-        opts?.onThreat?.({ id: 'print_shortcut', type: 'print', severity: 'warning', timestamp: Date.now() })
-      }
-    }
+    // Hide all content when printing
+    styleEl = document.createElement('style')
+    styleEl.textContent = '@media print { body { display: none !important; } }'
+    document.head.appendChild(styleEl)
 
     window.addEventListener('beforeprint', beforePrint)
     window.addEventListener('afterprint', afterPrint)
-    window.addEventListener('keydown', keydownHandler)
+    window.addEventListener('keydown', keydownHandler, true)
   },
 
   disable() {
-    if (typeof window === 'undefined') return
-
-    if (styleEl && styleEl.parentNode) {
-      styleEl.parentNode.removeChild(styleEl)
-      styleEl = null
-    }
-
-    if (beforePrint) {
-      window.removeEventListener('beforeprint', beforePrint)
-      beforePrint = null
-    }
-
-    if (afterPrint) {
-      window.removeEventListener('afterprint', afterPrint)
-      afterPrint = null
-    }
-    
-    if (keydownHandler) {
-      window.removeEventListener('keydown', keydownHandler)
-      keydownHandler = null
-    }
+    if (typeof window === 'undefined' || !enabled) return
+    enabled = false
+    styleEl?.remove()
+    styleEl = null
+    window.removeEventListener('beforeprint', beforePrint)
+    window.removeEventListener('afterprint', afterPrint)
+    window.removeEventListener('keydown', keydownHandler, true)
   }
 }

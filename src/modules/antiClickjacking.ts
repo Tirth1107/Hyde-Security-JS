@@ -4,6 +4,10 @@
  * or transformed, which are common techniques in UI redressing/clickjacking attacks.
  */
 
+import { createReporter } from '../core/events'
+
+const reporter = createReporter('antiClickjacking', 'critical')
+
 export const antiClickjacking = {
   /**
    * Protects an element from being clickjacked.
@@ -22,12 +26,9 @@ export const antiClickjacking = {
       'isVisible' in IntersectionObserverEntry.prototype;
 
     if (!isV2Supported) {
-      console.warn('[HydeSecurity] IntersectionObserver v2 is not supported in this browser. Fallback to basic framebusting.');
       // Basic framebusting fallback
       if (window.top !== window.self) {
-        document.dispatchEvent(new CustomEvent('hyde:threat', { 
-          detail: { source: 'antiClickjacking', type: 'framed' } 
-        }));
+        reporter.report('framed', { selector });
         onOccluded();
       }
       return () => {};
@@ -41,9 +42,7 @@ export const antiClickjacking = {
         // - Has opacity < 1
         // - Is transformed
         if (!(entry as any).isVisible && entry.isIntersecting) {
-          document.dispatchEvent(new CustomEvent('hyde:threat', { 
-            detail: { source: 'antiClickjacking', selector, type: 'occluded' } 
-          }));
+          reporter.report('occluded', { selector });
           onOccluded();
         }
       }
@@ -56,9 +55,7 @@ export const antiClickjacking = {
 
     // Also run standard framebusting check
     if (window.top !== window.self) {
-      document.dispatchEvent(new CustomEvent('hyde:threat', { 
-        detail: { source: 'antiClickjacking', type: 'framed' } 
-      }));
+      reporter.report('framed', { selector });
       onOccluded();
     }
 

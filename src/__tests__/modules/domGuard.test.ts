@@ -24,7 +24,7 @@ describe('domGuard', () => {
     document.getElementById('target')!.setAttribute('class', 'b')
     await flush()
     expect(onTamper).toHaveBeenCalledTimes(1)
-    expect(events[0]).toMatchObject({ source: 'domGuard', selector: '#target', type: 'attributes' })
+    expect(events[0]).toMatchObject({ source: 'domGuard', selector: '#target', type: 'tampered', mutation: 'attributes' })
 
     stop()
     document.removeEventListener('hyde:threat', listener)
