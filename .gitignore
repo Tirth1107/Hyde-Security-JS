@@ -33,3 +33,6 @@ coverage/
 
 # Misc
 *.tgz
+# Local scratch files
+temp.html
+temp.js

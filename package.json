@@ -1,13 +1,13 @@
 {
   "name": "@tirth1107/hyde-security-js",
-  "version": "1.1.0",
+  "version": "1.5.0",
   "description": "Client-side deterrence and security helpers for web apps — 60+ features including anti-devtools, XSS prevention, encryption, session management, bot detection, and more.",
   "main": "dist/hyde-security-js.cjs.js",
   "module": "dist/hyde-security-js.esm.js",
   "unpkg": "dist/hyde-security-js.umd.js",
   "types": "dist/index.d.ts",
   "publishConfig": {
-  "access": "public"
+    "access": "public"
   },
   "exports": {
     ".": {
@@ -29,6 +29,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly",
+    "build:website": "vite build --config vite.website.config.ts",
     "dev": "vite",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -73,6 +74,7 @@
     "axios": "^1.4.0",
     "bowser": "^2.11.0",
     "crypto-js": "^4.1.1",
+    "devtools-detector": "^2.0.25",
     "dompurify": "^2.4.0",
     "jose": "^4.15.0",
     "js-cookie": "^3.0.1",

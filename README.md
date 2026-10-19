@@ -1,4 +1,4 @@
-# 🔥 HydeSecurityJS v1.1.0
+# 🔥 HydeSecurityJS v1.5.0 (Pro)
 
 ![npm](https://img.shields.io/npm/v/@tirth1107/hyde-security-js)
 ![license](https://img.shields.io/npm/l/@tirth1107/hyde-security-js)
@@ -150,6 +150,12 @@ Detects when users open DevTools and optional UI locking.
 - **Auto-Retry**: Network client automatically retries 5xx errors with exponential backoff.
 - **Script Integrity**: `integrity.checkScriptIntegrity(src, hash)` verifies external scripts via SHA-256.
 
+### 7. 🌟 Pro Features (v1.5.0)
+- **Self-Healing DOM**: Advanced `domGuard` with `selfHealing: true` instantly reconstructs tampered elements (e.g. if an attacker deletes a watermark via DevTools).
+- **Behavioral Biometrics**: `biometrics.startTracking()` analyzes mouse trajectories and keystroke flight times in real-time to compute a bot vs human probability score.
+- **Advanced Anti-Clickjacking**: `antiClickjacking.protect()` utilizes `IntersectionObserver v2` to detect if sensitive UI components are occluded by transparent overlays or transforms.
+- **Zero-Trust Network Firewall**: `networkFirewall.enable(['api.myapp.com'])` intercepts API calls at the `fetch` and `XMLHttpRequest` level to enforce strict domain allowlisting and prevent data exfiltration.
+
 ## Advanced Usage
 
 ### Using the API directly
@@ -175,6 +181,11 @@ if (inputValidation.isSQLInjection("SELECT * FROM users")) {
   HydeSecurity.lockScreen("Malicious input detected")
 }
 ```
+
+## Migration Guide: v1.1.0 to v1.5.0
+
+- **Self-Healing DOM**: `domGuard.protect()` now accepts a third boolean parameter `selfHealing`.
+- **New Modules**: Added `biometrics`, `antiClickjacking`, and `networkFirewall` to `HydeSecurity.modules`.
 
 ## Migration Guide: v1.0.0 to v1.1.0
 
