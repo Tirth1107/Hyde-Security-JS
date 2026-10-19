@@ -246,10 +246,12 @@
       el.innerHTML = `<div class="log-entry">${message}</div>` + (el.innerHTML || '')
     }
 
-    window.testEncrypt = function() {
+    const DEMO_KEY = 'example-passphrase'
+
+    window.testEncrypt = async function() {
       try {
         const text = document.getElementById('plaintext').value
-        const encrypted = HydeSecurity.encryptText(text)
+        const encrypted = await HydeSecurity.encryptText(text, DEMO_KEY)
         updateOutput('encrypt-output', `✓ Encrypted: ${encrypted.substring(0, 50)}...`)
         addLog(`Encrypted: ${text}`)
       } catch(e) {
@@ -257,11 +259,11 @@
       }
     }
 
-    window.testDecrypt = function() {
+    window.testDecrypt = async function() {
       try {
         const text = document.getElementById('plaintext').value
-        const encrypted = HydeSecurity.encryptText(text)
-        const decrypted = HydeSecurity.decryptText(encrypted)
+        const encrypted = await HydeSecurity.encryptText(text, DEMO_KEY)
+        const decrypted = await HydeSecurity.decryptText(encrypted, DEMO_KEY)
         updateOutput('encrypt-output', `✓ Decrypted: ${decrypted}`)
         addLog(`Decrypted: ${decrypted}`)
       } catch(e) {

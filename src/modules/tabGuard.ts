@@ -1,16 +1,12 @@
-import { uid, now } from '../core/utils'
-import { HydeSecurityEvent } from '../core/config'
+import { createReporter, ThreatListener } from '../core/events'
+
+const reporter = createReporter('tabGuard', 'info')
 
 let enabled = false
-let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
 let blurOverlay: HTMLElement | null = null
 let warningOverlay: HTMLElement | null = null
 
-function report(type: string, details?: Record<string, any>) {
-    const ev: HydeSecurityEvent = { id: uid(), type, severity: 'warning', details, timestamp: now() }
-    onThreat?.(ev)
-    return ev
-}
+const report = (type: string, details?: Record<string, any>) => reporter.report(type, details)
 
 function createBlurOverlay() {
     if (blurOverlay) return
@@ -73,10 +69,10 @@ export const tabGuard = {
      * When the user switches tabs or windows, the page content is blurred
      * with a privacy shield overlay for confidentiality.
      */
-    enable(opts?: { onThreat?: (ev: HydeSecurityEvent) => void; blurOnWindowBlur?: boolean }) {
+    enable(opts?: { onThreat?: ThreatListener; blurOnWindowBlur?: boolean }) {
         if (enabled) return
         enabled = true
-        onThreat = opts?.onThreat
+        reporter.setCallback(opts?.onThreat)
         document.addEventListener('visibilitychange', handleVisibilityChange)
         if (opts?.blurOnWindowBlur !== false) {
             window.addEventListener('blur', handleWindowBlur)

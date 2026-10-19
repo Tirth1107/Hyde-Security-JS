@@ -16,7 +16,8 @@
 
     /* Paths */
     "paths": {
-      "hyde-security-js": ["../src/index.ts"]
+      "hyde-security-js": ["../src/index.ts"],
+      "hyde-security-js/react": ["../src/react.ts"]
     }
   },
   "include": ["src", "../src"]

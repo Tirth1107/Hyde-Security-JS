@@ -2,8 +2,10 @@
 
 Context and rules for AI assistants working on this repo. Deeper docs live in `docs/`:
 
-- `docs/ARCHITECTURE.md` — how the library is put together, module-by-module API map
-- `docs/KNOWN_ISSUES.md` — bugs, risks and tech debt found so far
+- `docs/ARCHITECTURE.md` — how the library is put together, module-by-module API map, how to write a module
+- `docs/KNOWN_ISSUES.md` — open limits and what has been fixed
+- `docs/V2_PLAN.md` — v2 design and the research behind each guard
+- `docs/MIGRATION-v2.md` — v1 → v2 breaking changes
 
 ## Git workflow (must follow)
 
@@ -16,24 +18,27 @@ Context and rules for AI assistants working on this repo. Deeper docs live in `d
 
 ## What this project is
 
-**HydeSecurityJS** (`@tirth1107/hyde-security-js`, v1.5.0, MIT) — a client-side
-deterrence and security-helper library for web apps. Anti-devtools, anti-copy/print/
-screenshot, XSS sanitizing, AES encryption, secure storage/cookies, sessions, bot
-detection, DOM tamper guard, CSRF/CSP helpers, network firewall, plus a React provider.
+**HydeSecurityJS** (`@tirth1107/hyde-security-js`, v2.0.0, MIT) — a client-side security
+layer for web apps. v2 guards: scriptGuard (supply chain / PCI DSS 6.4.3 & 11.6.1),
+skimmerGuard (Magecart), networkFirewall, clipboardGuard (ClickFix), agentShield (AI-agent
+prompt injection), phishingGuard, messageGuard, prototypeGuard, Trusted Types, passkeys (PRF),
+securityAudit, reporting, lockdown. Plus v1 helpers (Web Crypto encryption, storage,
+sanitize, CSP, sessions...) and deterrents (anti-devtools/copy/print...). React lives in `/react`.
 
-It is *deterrence*, not real security: everything runs in the browser and can be
-bypassed. Docs and README must keep saying "pair with server-side validation".
+Client-side code can be bypassed by whoever controls the browser. The library defends the
+page and its users against code that shouldn't be there. Docs must stay honest about limits.
 
 ## Layout
 
 ```
 src/
-  index.ts            # Public API object `HydeSecurity` (init/enableAll/disableAll/...)
-  react.ts            # `/react` entry: Provider + hook (+ re-exports HydeSecurity)
+  index.ts            # `HydeSecurity` API + named exports (no React)
+  react.ts            # `/react` entry: Provider + hooks (+ re-exports HydeSecurity)
   globals.d.ts        # `__HYDE_VERSION__`, injected from package.json at build time
-  core/               # config.ts (types + defaults), logger.ts, utils.ts
-  modules/            # One file per feature (33 modules) + react/ (Provider + hook)
-  __tests__/          # Vitest + jsdom tests (core, modules, react)
+  core/               # events (threat bus), hooks (safe patching), callsite, dom, encoding, sha256, config
+  modules/            # One file per feature (~45) + react/
+  __tests__/          # Vitest + jsdom (core, modules, react, v2/)
+tests/browser/        # Real-browser smoke test (puppeteer-core, Chrome/Firefox, two origins)
 examples/             # Manual test pages (full-test.html/js, vanilla, react)
 website/              # Separate Vite + React 19 demo site (own package.json)
 dist/                 # Build output (gitignored)
@@ -48,6 +53,7 @@ temp.html, temp.js    # Local scratch files, gitignored — not part of the lib
 | Lint | `npm run lint` (ESLint 9, `eslint.config.mjs`) |
 | Dev server (opens `examples/full-test.html`) | `npm run dev` |
 | Tests | `npm test` (watch) / `npx vitest run` (once) |
+| Browser tests | `npm run build && npm run test:browser` (add `-- firefox`) |
 | Type-check | `npm run type-check` |
 | Demo website | `cd website && npm run dev` (build: `npm run build:website`) |
 
@@ -56,16 +62,21 @@ Notes:
   holds native binaries for **both** (`@rollup/*`, `@esbuild/*`, and in `website/`
   `@rolldown/binding-*`, `lightningcss-*`). A plain `npm install` on one OS deletes
   the other OS's binaries — back them up and copy them back afterwards, or ask first.
-- Before pushing: `npx vitest run`, `npm run type-check`, `npm run lint`, `npm run build`
-  should all pass.
+- Before pushing: `npx vitest run`, `npm run type-check`, `npm run lint`, `npm run build`,
+  and `npm run test:browser` should all pass.
+- Don't `pkill -f "<text>"` with text that appears in your own command line; it kills the
+  shell. Use a bracket pattern like `pkill -f "node server[.]mjs"`.
 
 ## Conventions
 
 - TypeScript strict, target ES2019, React is an optional peer dependency.
-- Modules export a plain object (`export const antiCopy = { enable, disable }`) or
-  functions. Toggleable modules use module-level state and `enable()/disable()`.
-- Threats are reported via `onThreat(ev: HydeSecurityEvent)` and/or a
-  `document` `CustomEvent('hyde:threat')`.
+- Modules export a plain object with `enable(opts)` / `disable()` (and `isEnabled()`).
+  `enable()` calls `disable()` first, so calling it again reconfigures.
+- Report threats only through `createReporter('<module>')` from `core/events`. Never dispatch
+  `hyde:threat` by hand.
+- Wrap browser APIs only with `core/hooks` (`patchMethod`, `patchSetter`, `PatchGroup`).
+- Read security-relevant `document.*` via `core/dom` `safeDom` (clobbering-proof).
+- See "Writing a module" in `docs/ARCHITECTURE.md`.
 - Guard browser APIs with `typeof window/document === 'undefined'` for SSR.
 - New modules: add the file in `src/modules/`, import and register it in
   `HydeSecurity.modules` in `src/index.ts`, document it in README + CHANGELOG.

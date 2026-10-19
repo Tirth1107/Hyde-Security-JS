@@ -1,121 +1,82 @@
-# Architecture
+# Architecture (v2)
 
-## Entry point: `src/index.ts`
+## Entry points
 
-Exports `HydeSecurity` (default + named), `HydeSecurityProvider`, `useHydeSecurity`,
-and the types `HydeSecurityConfig` / `HydeSecurityEvent`. Also sets `window.HydeSecurity`.
+| Import | File | Contains |
+|---|---|---|
+| `@tirth1107/hyde-security-js` | `src/index.ts` | `HydeSecurity` API, named exports for every module, all types. **No React.** |
+| `@tirth1107/hyde-security-js/react` | `src/react.ts` | `HydeSecurityProvider`, `useHydeSecurity`, `useThreats`, `useSecurityAudit`, re-exports `HydeSecurity` |
+| UMD (`unpkg`) | `dist/hyde-security-js.umd.js` | Everything bundled, sets `window.HydeSecurity` |
 
-The API object keeps a single global `state = { config, enabled }`.
+## Core (`src/core/`)
 
-| Method | What it does |
+| File | Purpose |
 |---|---|
-| `init(cfg)` | If already initialized, `disableAll()` first; merge config, start logger, set `encryptionKey`, call `enableAll()` |
-| `setMode(mode)` | `disableAll()` then `enableAll()` with the new mode |
-| `enableAll()` | Turn on modules based on `mode` and the `enable*` flags (table below) |
-| `disableAll()` | Turn off every toggleable module and remove the watermark |
-| `destroy()` | `disableAll()` + `session.destroy()` + `networkFirewall.disable()` |
-| `getVersion()` | Version from `package.json`, injected at build time (`__HYDE_VERSION__`) |
-| `toast`, `lockScreen`, `unlockScreen` | UI helpers (overlay comes from antiDevtools) |
-| `encryptText`, `decryptText`, `safeHTML`, `checkPassword`, `detectBot` | Shortcuts to modules |
-| `protectElement(sel)`, `protectInput(sel)` | DOM guard / block paste on an input |
-| `modules` | Every module, for direct use |
+| `events.ts` | Threat bus. `events.emit/on/once/history/reset`, `createReporter(source)` used by every module. Delivers to type listeners, `source:<module>` listeners, `*`, and a `hyde:threat` DOM event on `document`. A throwing listener never breaks others. |
+| `hooks.ts` | Safe monkey-patching: `patchMethod`, `patchSetter`, `patchGetter`, `ownerOf`, `PatchGroup`. Wrappers carry an `active` flag, so restoring out of order leaves a pass-through instead of breaking the chain. **Every module that wraps a browser API must use these.** |
+| `callsite.ts` | `urlsFromStack` (Chrome + Firefox formats), `stackInspector.current()` (replaceable in tests), `hostMatches` / `isAllowedUrl` (origin, host, `*.wildcard`; no substring matching), extension-URL detection. |
+| `dom.ts` | `safeDom`: clobbering-proof `cookie()`, `all(selector)`, `isClobbered(name)`. Use in security-critical reads of `document.*`. |
+| `encoding.ts` | base64/base64url/hex/UTF-8, `randomBytes`, `getSubtle`, async `sha256Hex/Sri`, `timingSafeEqual`, the `Bytes` type. |
+| `sha256.ts` | Synchronous SHA-256 (verified against Node crypto). scriptGuard needs a sync hash to decide before a script executes. |
+| `config.ts` | `HydeSecurityConfig`, `LockdownOptions`, `defaultConfig`. |
+| `logger.ts`, `utils.ts` | Logging; `uid` (crypto.randomUUID), `optionsOf`, `preview`. |
 
-### What each mode turns on (`enableAll`)
+## `HydeSecurity` (`src/index.ts`)
 
-| Module | dev | balanced | strict |
-|---|---|---|---|
-| antiDevtools | – | ✓ (no lock, no debugger trap) | ✓ (auto-lock + debugger trap) |
-| antiIframe | – | ✓* | ✓* |
-| antiDebug | – | – | ✓ |
-| antiCopy, antiPrint, antiContextMenu, tabGuard, antiScreenCapture | opt-in | opt-in | ✓* |
-| watermark | if `enableWatermark` | same | same |
+- `init(cfg)` disables everything if already initialized, merges config, sets the encryption key, subscribes `onThreatDetected` to `*`, starts reporting and lockdown triggers, then calls `enableAll()`.
+- `enableAll()` turns modules on per mode (table below). Each guard key accepts `true`, an options object, or `false`.
+- `disableAll()` turns every toggleable module off. `destroy()` also removes subscriptions, reporting, session and lockdown.
+- `on`, `history`, `audit`, `lockdown`, `releaseLockdown`, `isLockedDown`, `getConfig`, plus v1 helpers (`encryptText` is async now).
 
-`✓*` = on unless that flag is set to `false`. "opt-in" = only if that flag is `true`.
-Every other module is never started automatically; the app calls it through `modules`.
-
-## Config (`src/core/config.ts`)
-
-`HydeSecurityConfig`: `appName`, `mode` (`dev|balanced|strict`, default `balanced`),
-`enableLogs`, `onThreatDetected`, `enableWatermark`, `allowedIframes`, `encryptionKey`,
-`enableDebuggerTrap`, plus the `enableAntiCopy|Print|ContextMenu|TabGuard|ScreenCapture|Iframe` overrides.
-
-`HydeSecurityEvent`: `{ id, type, severity: 'info'|'warning'|'critical', details?, timestamp }`.
-
-## Core helpers
-
-- `logger.ts` — `log`/`warn` only when `enableLogs`; `error` always logs. Prefix `[HydeSecurity]`.
-- `utils.ts` — `uid()` (uuid v4), `now()`, `hashString()` (SHA-256), `safeJSONParse`, `clamp`.
+| Mode | Enables |
+|---|---|
+| dev | nothing automatic |
+| balanced | antiIframe, prototypeGuard (monitor), clipboardGuard, phishingGuard, messageGuard (`['self']`, report) |
+| strict | balanced + antiDevtools (lock + debugger trap), antiDebug, copy/print/context-menu/tab/screenshot deterrents, scriptGuard / skimmerGuard / agentShield (report) |
+| any | networkFirewall, trustedTypes, reporting, lockdown only when configured |
 
 ## Modules (`src/modules/`)
 
-**Toggleable deterrents** (`enable(opts)` / `disable()`):
+**v2 guards** (`enable(opts)` / `disable()` / usually `isEnabled()`):
 
-| Module | Notes |
-|---|---|
-| `antiDevtools` | `devtools-detector` lib (one listener, removed on disable) + optional `debuggerTrap` every 1.5s; blocks F12, Ctrl+Shift+I/J/C, Ctrl+U; `detect()`, `isEnabled()`, `lockScreen()`, `unlockScreen()` |
-| `antiDebug` | Debugger-based checks |
-| `antiCopy` | Blocks copy/cut/drag, optional `disableSelection` |
-| `antiContextMenu` | Blocks right-click |
-| `antiPrint` | Blocks Ctrl+P, blurs on print |
-| `antiIframe` | Detects being framed; `allowedOrigins` |
-| `tabGuard` | Blur overlay when tab hidden |
-| `antiScreenCapture` | Screenshot deterrence |
-| `routerGuard` | `enable(onThreat)`; hooks `pushState`/`replaceState`/`popstate` |
+| Module | Hooks | Key API |
+|---|---|---|
+| `scriptGuard` | `Node.prototype.appendChild/insertBefore/replaceChild`, `Element.prototype.append/prepend/before/after/replaceWith`, MutationObserver | `getInventory`, `exportReport`, `authorize`, `hashInline`. Blocks by setting `type="text/hyde-blocked"` before insertion. Baseline in localStorage. |
+| `skimmerGuard` | `HTMLInputElement.prototype.value` getter, `EventTarget.prototype.addEventListener`, MutationObserver on `action`, submit capture | `DEFAULT_SENSITIVE_SELECTOR`, `markSensitive` |
+| `networkFirewall` | `fetch`, `XHR.open`, `sendBeacon`, `WebSocket`/`EventSource` (Proxy), `src`/`href` setters, `setAttribute` | `getStats`, `disable`, v1 array form still works |
+| `clipboardGuard` | `clipboard.writeText/write`, `DataTransfer.setData`, `document.execCommand` | `analyze` (`analyzeClipboardText`), `addressType` |
+| `agentShield` | MutationObserver (batched) | `scan`, `scoreInjection`, `hiddenReasons`, `detectAgent` |
+| `phishingGuard` | submit capture, MutationObserver | `checkLookalike`, `checkClone` |
+| `messageGuard` | `addEventListener`/`removeEventListener` on their real owner, `onmessage` setter, `window.postMessage` | `listen`, `send` |
+| `prototypeGuard` | interval monitor or `preventExtensions`/`freeze` | `check`, `isPolluted`, `safeParse`, `safeMerge`, `safeGet`, `scanClobbering` |
+| `trustedTypes` | `trustedTypes.createPolicy` | `createPolicy`, `enableDefaultPolicy`, `isEnforced`, `cspDirectives` |
+| `passkeys` | — | `capabilities`, `prfSupported`, `register`, `authenticate`, `deriveEncryptionKey` (PRF → HKDF → AES-GCM; never serializes PRF output) |
+| `securityAudit` | same-origin HEAD fetch | `run`, `print` |
+| `reporting` | event bus, ReportingObserver, visibilitychange | `flush`, `stats`. Uses the *pristine* fetch/sendBeacon captured at load. |
 
-**Helpers / utilities:**
+**Helpers / v1 modules:** `encryption` (Web Crypto AES-GCM, `decryptLegacy`), `storage` (`setEncrypted`/`getEncrypted`), `sanitize` (native `setHTML` → DOMPurify 3), `contentSecurityPolicy` (`strict`, `generateNonce`, `parse`), `network` (Web Crypto HMAC signing), `integrity` (SRI), `domGuard`, `antiClickjacking`, `cookie`, `session`, `csrfProtection`, `inputValidation`, `passwordStrength`, `honeypot`, `forms`, `antiBot`, `biometrics`, `fingerprint`, `device`, `routerGuard`, `obfuscator`, `watermark`, deterrents (`antiDevtools` with a lazy-loaded `devtools-detector`, `antiDebug`, `antiCopy`, `antiPrint`, `antiContextMenu`, `antiIframe`, `tabGuard`, `antiScreenCapture`).
 
-| Module | API |
-|---|---|
-| `sanitize` | `html`, `safeSetHTML`, `url`, `text` (DOMPurify) |
-| `encryption` | `setDefaultKey`, `hasCustomKey`, `encrypt`, `decrypt`, `encryptObject`, `decryptObject`, `deriveKey(seed, salt?, iterations?)` (CryptoJS AES; warns once if the public built-in key is used) |
-| `storage` | `set(k, v, {encrypt, key, ttl})`, `get`, `remove`, `clear` — keys prefixed `__hyde_`, localforage fallback |
-| `cookie` | `set`, `setSecure`, `get`, `remove` (js-cookie) |
-| `session` | `init({timeoutMinutes, onExpire})`, `broadcast`, `end`, `destroy`, `isActive` — idle timeout, BroadcastChannel (storage-event fallback) |
-| `rateLimiter` | `makeRateLimited(fn, wait)` (lodash.throttle) |
-| `forms` | `attachSanitize(form, onBot)`, `addHoneypot(form)` |
-| `honeypot` | `createHoneypot(prefix)`, `isTriggered(form)` |
-| `antiBot` | `detectFastTyping`, `detectPaste`, `detectHeadless`, `challengeMouseMovement`, `timingChallenge` |
-| `biometrics` | `startTracking(el)` — mouse/keystroke bot score |
-| `passwordStrength` | `check`, `validate(pw, rules)`, `generateSuggestions` (zxcvbn) |
-| `inputValidation` | `isEmail`, `isURL`, `isAlphanumeric`, `isSQLInjection`, `isXSSAttempt`, `sanitizeInput`, `validateField` |
-| `csrfProtection` | `getToken`, `getTokenFromCookie`, `attachToAxios`, `attachToForm` |
-| `contentSecurityPolicy` | `build`, `inject`, `onViolation`, `getDefaults` |
-| `network` | `createClient({apiKey, sign, deriveKey, baseURL, retries, retryNonIdempotent})` — axios, HMAC signing, retries safe methods on 5xx/network errors |
-| `headers` | `setupAxios(client, {appName})` |
-| `integrity` | `check(hash)`, `checkScriptIntegrity(src, hash)` |
-| `domGuard` | `protect(selector, onTamper, selfHealing)` → cleanup fn. Restores from a snapshot; a document-wide observer catches removal; emits `healed: false` if it can't restore |
-| `antiClickjacking` | `protect(selector, onOccluded)` — IntersectionObserver v2 |
-| `networkFirewall` | `enable(allowedDomains, onBlocked)` → restore fn, `disable`, `isEnabled`; wraps `fetch` and `XHR.open`; re-enable replaces the allowlist |
-| `obfuscator` | Text/code obfuscation helpers |
-| `watermark` | `addWatermark(text)` → remove fn (tiled canvas) |
-| `fingerprint` | `getFingerprint()` (FingerprintJS) |
-| `device` | `detectDevice()` (Bowser) |
+## Writing a module
 
-## React (`src/modules/react/`)
+1. `const reporter = createReporter('myGuard', 'warning')` and report through it only.
+2. Wrap browser APIs with `patchMethod`/`patchSetter` in a `PatchGroup`. `disable()` calls `restoreAll()`.
+3. `enable()` calls `this.disable()` first, so it's idempotent and reconfigurable.
+4. Guard `typeof window/document === 'undefined'` for SSR.
+5. Read security-relevant `document.*` through `safeDom`.
+6. Register it in `src/index.ts` (`modules`, named export, mode defaults) and `core/config.ts`. Add tests in `src/__tests__/v2/`, and a browser check in `tests/browser/smoke.mjs` if it depends on real engine behavior.
 
-- `HydeSecurityProvider({ config, children })` — calls `HydeSecurity.init(config)` in
-  `useEffect`, `destroy()` on unmount. Re-inits only when a non-function config value
-  changes (JSON key); `onThreatDetected` is read from a ref so the latest one is called.
-  Context: `{ config, isInitialized, security }`.
-- `useHydeSecurity()` — context plus bound `init`, `destroy`, `setMode`, `toast`,
-  `lockScreen`, `unlockScreen`, `modules`.
-- `src/react.ts` is the `./react` package entry (`dist/react.esm.mjs` / `dist/react.cjs.js`).
-  The main entry still exports the Provider and hook too, for backward compatibility.
+## Build & tests
 
-## Build
+- `vite.config.ts` has two passes: ESM/CJS with `index` + `react` entries (dependencies external, ESM as `.mjs`), then `--mode umd` with everything bundled. `__HYDE_VERSION__` comes from `package.json`.
+- `npx vitest run` runs 143 jsdom tests. The setup uses Node's real Web Crypto.
+- `npm run test:browser [firefox]` runs a real-browser smoke test of the UMD bundle with two local origins.
 
-- `vite.config.ts` — library mode, two passes:
-  - `vite build`: entries `src/index.ts` + `src/react.ts` → `dist/{hyde-security-js,react}.esm.mjs`
-    and `.cjs.js`, plus a shared `index-*.{mjs,js}` chunk. React and all `dependencies` are external.
-  - `vite build --mode umd`: `dist/hyde-security-js.umd.js`, everything bundled except React.
-  - Types via `tsc --emitDeclarationOnly`. `__HYDE_VERSION__` is defined from `package.json`.
-- `vitest.config.ts` — jsdom, globals, setup `src/__tests__/setup.ts`, alias `@` → `src`.
-- `eslint.config.mjs` — ESLint 9 flat config with typescript-eslint (ignores `website/`, which uses oxlint).
+### jsdom gaps (test in the browser suite instead)
+- No `window.onmessage` dispatch.
+- No named access on `document`/`window` (DOM clobbering).
+- `isSecureContext` is false on localhost.
+- Separate `Uint8Array` realm (use `ArrayBuffer.isView`).
 
 ## Website (`website/`)
 
-Separate Vite 8 + React 19 + TypeScript app with its own `package.json`.
-Its `vite.config.ts` aliases `hyde-security-js` → `../src/index.ts`, so it always
-uses the local source. `App.tsx` is a dashboard of ~30 demo components in
-`src/components/demos/` plus `LiveLogger` and `FeatureCard`. The old static
-`website/script.js` and `styles.css` were deleted in favor of this app.
+Vite 8 + React 19. Aliases `hyde-security-js` → `../src/index.ts` and `hyde-security-js/react` → `../src/react.ts` (vite config + tsconfig paths). `dedupe: ['react','react-dom']` is required, or library source picks up the root's React 18. v2 demos live in `src/components/demos/GuardDemos.tsx`. The Live Logger subscribes with `HydeSecurity.on('*')`.

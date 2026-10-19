@@ -1,16 +1,30 @@
-import { uid, now } from '../core/utils'
-import { HydeSecurityEvent } from '../core/config'
-import devtoolsDetector from 'devtools-detector'
+import { createReporter, ThreatListener } from '../core/events'
+
+const reporter = createReporter('antiDevtools', 'warning')
+
+type Detector = {
+  addListener(fn: (open: boolean) => void): void
+  removeListener(fn: (open: boolean) => void): void
+  launch(): void
+  stop(): void
+}
+// Loaded on first enable(): devtools-detector runs a Function('return this') shim
+// at load, which a strict CSP reports. Apps that never enable this never load it.
+let detector: Detector | null = null
+let detectorLoading: Promise<Detector | null> | null = null
+function loadDetector(): Promise<Detector | null> {
+  if (!detectorLoading) {
+    detectorLoading = import('devtools-detector')
+      .then((m: any) => (detector = (m.default ?? m) as Detector))
+      .catch(() => null)
+  }
+  return detectorLoading
+}
 
 let intervalId: ReturnType<typeof setInterval> | null = null
 let enabled = false
-let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
 
-function report(type: string, details?: Record<string, any>) {
-  const ev: HydeSecurityEvent = { id: uid(), type, severity: 'warning', details, timestamp: now() }
-  onThreat?.(ev)
-  return ev
-}
+const report = (type: string, details?: Record<string, any>) => reporter.report(type, details)
 
 function trapDebugger() {
   const start = performance.now()
@@ -68,7 +82,7 @@ let detectorListener: ((isOpen: boolean) => void) | null = null
 let detectorOpen = false
 
 export interface AntiDevtoolsOptions {
-  onThreat?: (ev: HydeSecurityEvent) => void
+  onThreat?: ThreatListener
   /** Show a lock overlay when DevTools are detected */
   autoLock?: boolean
   /**
@@ -84,7 +98,7 @@ export const antiDevtools = {
   enable(cfg?: AntiDevtoolsOptions) {
     if (enabled) return
     enabled = true
-    onThreat = cfg?.onThreat
+    reporter.setCallback(cfg?.onThreat)
     detachKeyBlocker = attachKeyBlocker()
 
     // One listener per enable(); removed again in disable()
@@ -94,8 +108,13 @@ export const antiDevtools = {
       report('devtools_detected', { method: 'devtools-detector' })
       if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
     }
-    devtoolsDetector.addListener(detectorListener)
-    devtoolsDetector.launch()
+    const listener = detectorListener
+    loadDetector().then(d => {
+      // Still enabled with the same listener? (disable() may have run meanwhile)
+      if (!d || !enabled || detectorListener !== listener) return
+      d.addListener(listener)
+      d.launch()
+    })
 
     if (cfg?.debuggerTrap) {
       intervalId = setInterval(() => {
@@ -114,11 +133,17 @@ export const antiDevtools = {
     detachKeyBlocker = null
     hideOverlay()
 
-    if (detectorListener) devtoolsDetector.removeListener(detectorListener)
+    if (detector && detectorListener) {
+      detector.removeListener(detectorListener)
+      detector.stop()
+    }
     detectorListener = null
-    devtoolsDetector.stop()
     detectorOpen = false
     enabled = false
+  },
+  /** Resolves once the detector library has loaded (useful in tests) */
+  ready(): Promise<boolean> {
+    return loadDetector().then(d => !!d)
   },
   /** Whether the module is currently running */
   isEnabled() {

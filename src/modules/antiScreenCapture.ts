@@ -1,15 +1,13 @@
-import { uid, now } from '../core/utils'
-import { HydeSecurityEvent } from '../core/config'
+import { createReporter, ThreatListener } from '../core/events'
+import { patchMethod, Patch } from '../core/hooks'
+
+const reporter = createReporter('antiScreenCapture', 'warning')
 
 let enabled = false
 let styleEl: HTMLStyleElement | null = null
-let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
+let displayMediaPatch: Patch | null = null
 
-function report(type: string, details?: Record<string, any>) {
-    const ev: HydeSecurityEvent = { id: uid(), type, severity: 'critical', details, timestamp: now() }
-    onThreat?.(ev)
-    return ev
-}
+const report = (type: string, details?: Record<string, any>) => reporter.report(type, details)
 
 /**
  * Inject CSS that makes screenshots partially useless.
@@ -52,28 +50,25 @@ export const antiScreenCapture = {
      * - Monitors Screen Capture API (getDisplayMedia) 
      * - Adds watermark overlay during capture attempts
      */
-    enable(opts?: { onThreat?: (ev: HydeSecurityEvent) => void }) {
+    enable(opts?: { onThreat?: ThreatListener }) {
         if (enabled) return
         enabled = true
-        onThreat = opts?.onThreat
+        reporter.setCallback(opts?.onThreat)
 
         // 1. Inject anti-capture CSS
         injectAntiCaptureCSS()
 
         // 2. Monitor navigator.mediaDevices.getDisplayMedia if available
-        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-            const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices)
-            navigator.mediaDevices.getDisplayMedia = function (...args: any[]) {
-                report('screen_capture_attempt', { method: 'getDisplayMedia' })
+        if (typeof navigator !== 'undefined' && typeof navigator.mediaDevices?.getDisplayMedia === 'function') {
+            displayMediaPatch = patchMethod(navigator.mediaDevices, 'getDisplayMedia', original => function (this: any, ...args: any[]) {
                 // Allow the call but report it
-                return originalGetDisplayMedia(...args)
-            } as any
+                report('screen_capture_attempt', { method: 'getDisplayMedia' })
+                return original.apply(this, args)
+            })
         }
 
         // 3. Detect PrtScn key
         document.addEventListener('keyup', antiScreenCapture._keyHandler, true)
-
-        report('anti_screen_capture_enabled')
     },
 
     _keyHandler(e: KeyboardEvent) {
@@ -109,6 +104,8 @@ export const antiScreenCapture = {
         if (!enabled) return
         enabled = false
         removeAntiCaptureCSS()
+        displayMediaPatch?.restore()
+        displayMediaPatch = null
         document.removeEventListener('keyup', antiScreenCapture._keyHandler, true)
     },
 

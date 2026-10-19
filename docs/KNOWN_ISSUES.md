@@ -1,54 +1,40 @@
 # Known Issues
 
-First review: 2026-10-19. Fixed on branch `fix/known-issues` (see CHANGELOG "Unreleased").
+Last updated: 2026-10-19 (v2.0.0, branch `feature/v2.0`).
 
-## Still open
+## Open
 
-These need a decision from the owner, usually because fixing them would break
-existing users.
+- **UMD bundle + strict CSP (Firefox):** the bundled `devtools-detector` runs a caught
+  `Function('return this')` shim at load, which Firefox reports as a blocked eval under a CSP
+  without `'unsafe-eval'`. Harmless. ESM/CJS builds lazy-load it only when anti-devtools is
+  enabled. A full fix would mean replacing `devtools-detector` with in-house detection.
+- **scriptGuard limits:** scripts present in the HTML before HydeSecurity loads can only be
+  reported, not blocked. An inline script inserted *empty* and filled in afterwards is reported
+  after it runs. Load HydeSecurity first and pair it with CSP.
+- **skimmerGuard attribution** depends on stack traces. Code running from `eval`/`new Function`
+  has no script URL and counts as first-party. Use CSP without `'unsafe-eval'`.
+- **clipboardGuard** inspects script clipboard writes only. It can't see what the user copies
+  from another site or app.
+- **agentShield** is pattern-based. Rewording can evade it. Treat it as a filter, not a guarantee.
+- **phishingGuard clone detection** only fires if the phishing kit copies your JavaScript.
+- **Website bundle is ~1.5 MB** (single chunk). Code-splitting the demos would help.
+- **Website lint (`oxlint`)** can't run on Linux right now (its native binary is Windows-only).
+- **`v1` deterrent modules** (obfuscator, watermark, biometrics, fingerprint) weren't redesigned
+  for v2. They still work, but report through the old local callbacks where applicable.
 
-- **The main entry imports React.** `src/index.ts` re-exports `HydeSecurityProvider`,
-  so the ESM/CJS bundle contains `import 'react'`. A vanilla app without React
-  installed can fail to bundle. Fix: export React only from `/react` — a breaking
-  change, so save it for v2.0.0.
-- **Built-in fallback keys still exist** (`hyde_default_key` for encryption,
-  `hyde-default-sign-key` for request signing). They now log a warning. Removing
-  them (forcing a key) is a breaking change.
-- **PBKDF2 defaults to 1000 iterations** in `encryption.deriveKey()`. Kept for
-  compatibility; callers can pass a higher `iterations`. Raise the default in v2.
-- **UMD default + named exports**: Rollup warns that UMD users may need
-  `HydeSecurity.default`. `window.HydeSecurity` is set directly in `index.ts`, so
-  browsers are unaffected.
-- **Website bundle is ~1.5 MB** (one chunk). Code-splitting the demos would help.
-- **Website lint (`oxlint`) is unchecked on Linux** — its native binary is Windows-only.
+## Fixed in 2.0.0
 
-## Fixed
+- React imported by the main entry → main entry is React-free; React only in `/react`.
+- Built-in fallback encryption/signing keys → removed; a key is required.
+- PBKDF2 1000 iterations → 600,000 (configurable, minimum 100,000).
+- Out-of-order unpatching of browser APIs → `core/hooks` safe patches everywhere.
+- Security code trusting clobberable `document.*` → `core/dom` pristine accessors.
+- Demo site loaded two React copies → Vite `dedupe`.
+- Library threats never reached the demo site's logger → subscribes via `HydeSecurity.on`.
+- antiScreenCapture didn't restore `getDisplayMedia`; antiPrint wasn't idempotent.
 
-| Issue | Fix |
-|---|---|
-| Tests couldn't run on Linux (Windows-only native binaries) | Added Linux Rollup/esbuild binaries next to the Windows ones |
-| `npm run lint` broken (no ESLint) | ESLint 9 + typescript-eslint, `eslint.config.mjs`; lint is clean |
-| Uncommitted v1.5.0 work on `main` | Committed on `fix/known-issues` |
-| Line-ending noise in ~29 files | `.gitattributes` (`* text=auto eol=lf`) |
-| Encryption silently used a public default key | `encryptionKey` config, `setDefaultKey()`, one-time warning |
-| `deriveKey()` used a random salt | Fixed default salt → deterministic |
-| antiDevtools piled up detector listeners | Listener stored and removed in `disable()` |
-| antiDevtools `debugger` trap ran in balanced mode | Strict mode only, or `enableDebuggerTrap` |
-| antiDevtools `detect()` always `false` | Tracks the last detector result |
-| Provider re-initialized on every render with inline config | Re-inits only when a setting changes; latest callback via ref |
-| Website called `init()` twice | Config passed to the Provider only |
-| Second `init()` didn't apply new config | `init()` disables first if already initialized |
-| domGuard self-heal double-fired / failed silently | Rewritten with a snapshot + a document-wide removal observer |
-| networkFirewall double-wrapped `fetch` | `enable()` replaces the old one; `disable()` added; `destroy()` calls it |
-| `session.broadcast()` stub | Real method; works before `init()` |
-| Network client retried POST/PATCH | Only safe methods retry by default |
-| All dependencies bundled into ESM/CJS (1.25 MB) | Dependencies external (~35–50 KB) |
-| ESM `.js` treated as CommonJS by Node | Renamed to `.esm.mjs` |
-| `./react` export was the same bundle | Own entry `src/react.ts` → `dist/react.*` |
-| `getVersion()` hardcoded | Injected from `package.json` |
-| Overlay used `innerText` | `textContent` |
-| Test setup's `localStorage` mock lacked `key()` | Added |
-| `temp.html` / `temp.js` scratch files | Gitignored (kept on disk) |
-| Website README was the Vite template | Rewritten |
-| Stale `vite.website.config.ts` | Removed; `build:website` runs the website's own build |
-| Thin test coverage (25 tests) | 62 tests |
+## Fixed in 1.5.1 (branch `fix/known-issues`)
+
+See CHANGELOG `[1.5.1]`: tooling (Linux binaries, ESLint), devtools listener leak, Provider
+re-init loop, domGuard self-healing, firewall double-wrap, session broadcast, safe retries,
+external dependencies in ESM/CJS, `.mjs` ESM, version injection.

@@ -18,20 +18,23 @@ describe('antiDevtools listener lifecycle', () => {
     listeners.clear()
   })
 
-  it('does not pile up detector listeners across enable/disable cycles', () => {
+  it('does not pile up detector listeners across enable/disable cycles', async () => {
     for (let i = 0; i < 5; i++) {
       antiDevtools.enable({})
+      await antiDevtools.ready()
       antiDevtools.disable()
     }
     antiDevtools.enable({})
+    await antiDevtools.ready()
     expect(listeners.size).toBe(1)
     antiDevtools.disable()
     expect(listeners.size).toBe(0)
   })
 
-  it('reports once per detection and updates detect()', () => {
+  it('reports once per detection and updates detect()', async () => {
     const onThreat = vi.fn()
     antiDevtools.enable({ onThreat })
+    await antiDevtools.ready()
     listeners.forEach(fn => fn(true))
     expect(onThreat).toHaveBeenCalledTimes(1)
     expect(onThreat.mock.calls[0][0].type).toBe('devtools_detected')
@@ -51,8 +54,17 @@ describe('antiDevtools listener lifecycle', () => {
     spy.mockRestore()
   })
 
-  it('auto-lock shows an overlay on detection', () => {
+  it('a disable() before the detector loads leaves no listener behind', async () => {
+    antiDevtools.enable({})
+    antiDevtools.disable()
+    await antiDevtools.ready()
+    await new Promise(r => setTimeout(r, 0))
+    expect(listeners.size).toBe(0)
+  })
+
+  it('auto-lock shows an overlay on detection', async () => {
     antiDevtools.enable({ autoLock: true })
+    await antiDevtools.ready()
     listeners.forEach(fn => fn(true))
     expect(document.body.textContent).toContain('Developer Tools Detected')
     antiDevtools.disable()

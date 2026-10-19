@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useHydeSecurity } from 'hyde-security-js'
+import { useHydeSecurity } from 'hyde-security-js/react'
 import { emitLog } from '../LiveLogger'
 
 const BotDetectionDemo = () => {

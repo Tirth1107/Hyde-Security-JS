@@ -20,4 +20,10 @@ export default tseslint.config(
     files: ['*.config.{ts,mjs,js}'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    // Node script whose page.evaluate() callbacks run in the browser
+    files: ['tests/browser/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser, HydeSecurity: 'readonly' } },
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { caughtErrors: 'none' }] },
+  },
 )

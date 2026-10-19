@@ -1,41 +1,53 @@
+import { createReporter, ThreatListener } from '../core/events'
+
+const reporter = createReporter('antiIframe', 'critical')
+
+export interface AntiIframeOptions {
+  onThreat?: ThreatListener
+  /** Origins allowed to frame this page */
+  allowedOrigins?: string[]
+  /** Navigate the top window to this page when framed by an unknown origin (default true) */
+  breakOut?: boolean
+}
+
+function framerOrigin(): string | null {
+  // ancestorOrigins (Chromium/Safari) is reliable; referrer is the fallback
+  const ao = (location as any).ancestorOrigins as DOMStringList | undefined
+  if (ao && ao.length) return ao[0]
+  try {
+    return document.referrer ? new URL(document.referrer).origin : null
+  } catch (e) {
+    return null
+  }
+}
+
 export const antiIframe = {
-  enable(opts?: { onThreat?: (ev: any) => void; allowedOrigins?: string[] }) {
-    if (typeof window === 'undefined') return
-
+  /** Is this page inside a frame? */
+  isFramed(): boolean {
+    if (typeof window === 'undefined') return false
     try {
-      if (window.self !== window.top) {
-        // We are in an iframe
-        const referrer = document.referrer
-        let isAllowed = false
-
-        if (opts?.allowedOrigins && opts.allowedOrigins.length > 0 && referrer) {
-          try {
-            const refUrl = new URL(referrer)
-            isAllowed = opts.allowedOrigins.includes(refUrl.origin)
-          } catch (e) {
-            // Invalid referrer URL
-          }
-        }
-
-        if (!isAllowed) {
-          opts?.onThreat?.({ id: 'iframe', type: 'iframe', severity: 'critical', timestamp: Date.now() })
-          if (window.top) {
-            window.top.location.href = window.self.location.href
-          }
-        }
-      }
+      return window.self !== window.top
     } catch (e) {
-      // Access to window.top might throw due to cross-origin policies
-      opts?.onThreat?.({ id: 'iframe_cross_origin', type: 'iframe', severity: 'critical', timestamp: Date.now() })
-      // Try to break out anyway
-      try {
-        if (window.top) window.top.location.href = window.self.location.href
-      } catch (err) {}
+      return true // cross-origin access to top throws, which means we are framed
     }
   },
 
-  disable() {
-    // Cannot really "disable" once we broke out of the iframe, 
-    // but provided for interface compliance
-  }
+  enable(opts: AntiIframeOptions = {}) {
+    if (typeof window === 'undefined' || !this.isFramed()) return
+    reporter.setCallback(opts.onThreat)
+    const origin = framerOrigin()
+    if (origin && opts.allowedOrigins?.includes(origin)) return
+
+    reporter.report('framed_by_unknown_origin', { framer: origin })
+    if (opts.breakOut !== false) {
+      try {
+        if (window.top) window.top.location.href = window.self.location.href
+      } catch (e) {
+        // Sandboxed iframes can block this; CSP frame-ancestors is the real fix
+      }
+    }
+  },
+
+  /** Nothing to undo; kept for a consistent interface */
+  disable() {}
 }

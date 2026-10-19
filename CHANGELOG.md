@@ -5,7 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-10-19
+
+A rebuild around current browser threats. See [docs/MIGRATION-v2.md](docs/MIGRATION-v2.md).
+
+### Added — new guards
+- **scriptGuard** — script inventory, allowlist, SRI requirement, change detection between visits, and pre-execution blocking of unauthorized dynamic scripts. JSON audit export for PCI DSS 4.0 req. 6.4.3 / 11.6.1.
+- **skimmerGuard** — Magecart/formjacking defense: attributes reads of card/password/OTP fields and key listeners to the calling script; blanks or blocks third-party access; reverts form `action` hijacks.
+- **clipboardGuard** — blocks ClickFix payloads (PowerShell, mshta, LOLBins, `curl | sh`, encoded commands, fake-CAPTCHA text) written by scripts; detects crypto-address swaps.
+- **agentShield** — finds prompt-injection text hidden from people but visible to AI browser agents (hidden/1px/same-color/off-screen text, comments, attributes, templates); can neutralize it; `detectAgent()` spots AI agents and automated browsers.
+- **phishingGuard** — site-clone detection with beacon, lookalike-domain checks, blocking credential forms that post to foreign origins, Browser-in-the-Browser overlay detection, automatic `rel=noopener`.
+- **messageGuard** — exact-origin `listen()`, `send()` that refuses `'*'`, page-wide message firewall, audit of wildcard sends.
+- **prototypeGuard** — monitor/lock/freeze built-in prototypes, `safeParse`/`safeMerge`/`safeGet`, DOM clobbering scan.
+- **trustedTypes** — named and default policies (sanitize HTML, allowlist script URLs, block string-to-code), enforcement detection.
+- **passkeys** — WebAuthn JSON helpers, capabilities, autofill sign-in, and PRF passkey-derived AES-256 keys.
+- **securityAudit** — `HydeSecurity.audit()` grades headers, CSP, Trusted Types, SRI, mixed content, cookies, token storage, clobbering, and more, with fixes.
+- **reporting** — batched, de-duplicated, sampled, redactable telemetry with `sendBeacon` flush and ReportingObserver collection. Bypasses the firewall by design.
+- **lockdown** — manual or automatic emergency mode.
+- **networkFirewall v2** — adds `sendBeacon`, `WebSocket`, `EventSource`, and `<img>/<script>/<iframe>/<link>` beacons; report mode; stats.
+- **contentSecurityPolicy** — `generateNonce()`, `strict()` preset (nonce + strict-dynamic + Trusted Types), more directives, `parse()`. CSP violations are reported as threats.
+- **Core** — central event bus (`HydeSecurity.on`, `history`), safe layered API patching, call-site attribution, clobbering-proof DOM access, sync SHA-256.
+- **React** — `useThreats()` and `useSecurityAudit()` hooks.
+- Named exports for every module (tree-shaking).
+
+### Changed (breaking)
+- Encryption is Web Crypto AES-256-GCM with PBKDF2-SHA256 (600k). It's async, needs a key, and `decryptLegacy()` migrates v1 data.
+- Encrypted storage uses `storage.setEncrypted()` / `getEncrypted()`.
+- React is exported only from `/react`; the main entry no longer imports React.
+- One threat event shape with `source`; several event types renamed.
+- Anti-devtools is strict-only by default; `devtools-detector` is lazy-loaded.
+- Request signing requires `signingKey` (Web Crypto HMAC) and signs a hash of the body.
+- `sanitize.html()` escapes on the server instead of a regex strip.
+- DOMPurify 2 → 3.4 (`preventClobbering` option added).
+- Removed unused dependencies: `jose`, `nanoid`, `toastify-js`, `uuid`.
+
+### Fixed
+- antiScreenCapture never restored `getDisplayMedia`.
+- antiPrint wasn't idempotent.
+- routerGuard and other patches couldn't be undone safely out of order.
+- Library threats never reached the demo site's live logger (it listened on `window`; events go to `document`).
+- The demo site loaded two React copies (`useState` of null). Fixed with Vite `dedupe`.
+
+### Tests
+- 143 unit tests (jsdom) and a real-browser smoke suite (Chrome + Firefox) covering cross-origin skimmer attribution, pre-execution script blocking, firewall channels, Trusted Types, and postMessage.
+
+## [1.5.1] - not released separately (included in 2.0.0)
 
 ### Added
 - `encryptionKey` config option and `encryption.setDefaultKey()` / `hasCustomKey()` — set one key for the whole app.

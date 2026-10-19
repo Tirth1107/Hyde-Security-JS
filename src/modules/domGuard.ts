@@ -1,3 +1,5 @@
+import { createReporter } from '../core/events'
+
 const OBSERVE_ELEMENT: MutationObserverInit = {
   childList: true,
   attributes: true,
@@ -5,10 +7,10 @@ const OBSERVE_ELEMENT: MutationObserverInit = {
   characterData: true
 }
 
+const reporter = createReporter('domGuard', 'critical')
+
 function emitThreat(selector: string, type: string, extra?: Record<string, any>) {
-  document.dispatchEvent(new CustomEvent('hyde:threat', {
-    detail: { source: 'domGuard', selector, type, ...extra }
-  }))
+  reporter.report(type === 'node_removed' ? 'node_removed' : 'tampered', { selector, mutation: type, ...extra })
 }
 
 export const domGuard = {
