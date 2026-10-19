@@ -1,7 +1,29 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios'
 import CryptoJS from 'crypto-js'
 
-export function createClient(opts?: { apiKey?: string; sign?: boolean; deriveKey?: string; baseURL?: string }): AxiosInstance {
+const BUILTIN_SIGN_KEY = 'hyde-default-sign-key'
+// Repeating these is safe; POST/PATCH could create duplicates on the server
+const IDEMPOTENT = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE']
+
+export interface ClientOptions {
+  apiKey?: string
+  /** Add an HMAC-SHA256 `x-hyde-signature` header */
+  sign?: boolean
+  /** Key used for signing. Without it a public built-in key is used. */
+  deriveKey?: string
+  baseURL?: string
+  /** Max retries for network errors / 5xx (default 3) */
+  retries?: number
+  /** Also retry POST and PATCH (default false — they may not be safe to repeat) */
+  retryNonIdempotent?: boolean
+}
+
+export function createClient(opts?: ClientOptions): AxiosInstance {
+  if (opts?.sign && !opts.deriveKey) {
+    console.warn('[HydeSecurity] network.createClient({ sign: true }) without deriveKey uses a public built-in key.')
+  }
+  const maxRetries = opts?.retries ?? 3
+
   const client = axios.create({
     baseURL: opts?.baseURL
   })
@@ -19,7 +41,7 @@ export function createClient(opts?: { apiKey?: string; sign?: boolean; deriveKey
     if (opts?.sign && config.headers) {
       const method = config.method?.toUpperCase() || 'GET'
       const url = config.url || ''
-      const key = opts.deriveKey || 'hyde-default-sign-key'
+      const key = opts.deriveKey || BUILTIN_SIGN_KEY
       
       const payload = `${method}:${url}:${timestamp}`
       const signature = CryptoJS.HmacSHA256(payload, key).toString(CryptoJS.enc.Hex)
@@ -40,9 +62,11 @@ export function createClient(opts?: { apiKey?: string; sign?: boolean; deriveKey
       config._retryCount = config._retryCount || 0
 
       // Only retry on 5xx errors or network errors
-      const shouldRetry = !error.response || (error.response.status >= 500 && error.response.status <= 599)
-      
-      if (shouldRetry && config._retryCount < 3) {
+      const method = String(config.method || 'GET').toUpperCase()
+      const safeToRepeat = opts?.retryNonIdempotent || IDEMPOTENT.includes(method)
+      const serverOrNetworkError = !error.response || (error.response.status >= 500 && error.response.status <= 599)
+
+      if (safeToRepeat && serverOrNetworkError && config._retryCount < maxRetries) {
         config._retryCount += 1
         const delay = Math.pow(2, config._retryCount - 1) * 1000 // 1s, 2s, 4s
         

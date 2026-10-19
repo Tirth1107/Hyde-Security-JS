@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Shield, ShieldAlert, Activity, EyeOff, LayoutGrid, Terminal, Key, Ghost, Cpu, Fingerprint } from 'lucide-react'
 import { HydeSecurityProvider, useHydeSecurity } from 'hyde-security-js'
 import LiveLogger from './components/LiveLogger'
@@ -37,12 +37,6 @@ const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState('all')
   const [loggerOpen, setLoggerOpen] = useState(false)
 
-  useEffect(() => {
-    security.init?.({
-      mode: 'balanced',
-      appName: 'HydeSecurity Test Suite'
-    })
-  }, [])
 
   return (
     <div className="layout">
@@ -177,7 +171,7 @@ const DashboardContent = () => {
 
 function App() {
   return (
-    <HydeSecurityProvider config={{}}>
+    <HydeSecurityProvider config={{ mode: 'balanced', appName: 'HydeSecurity Test Suite' }}>
       <DashboardContent />
     </HydeSecurityProvider>
   )

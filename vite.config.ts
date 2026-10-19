@@ -1,40 +1,52 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import pkg from './package.json'
 
-export default defineConfig({
+const reactExternals = ['react', 'react-dom', 'react/jsx-runtime']
+// ESM/CJS builds leave dependencies to the app's bundler (no duplicate copies).
+// UMD is loaded straight in the browser, so it bundles them.
+const deps = Object.keys(pkg.dependencies)
+const isDependency = (id: string) => deps.some(d => id === d || id.startsWith(`${d}/`))
+const globals = {
+  react: 'React',
+  'react-dom': 'ReactDOM',
+  'react/jsx-runtime': 'jsxRuntime'
+}
+
+// `vite build` builds the ESM/CJS entries (main + react).
+// `vite build --mode umd` builds the single-file UMD bundle (UMD can't have two entries).
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  define: {
+    __HYDE_VERSION__: JSON.stringify(pkg.version)
+  },
   server: {
     port: 5173,
     open: '/examples/full-test.html'
   },
   build: {
-    lib: {
-      entry: 'src/index.ts',
-      name: 'HydeSecurity',
-      formats: ['es', 'umd', 'cjs'],
-      fileName: (format) => {
-        const formatMap: Record<string, string> = {
-          es: 'hyde-security-js.esm.js',
-          umd: 'hyde-security-js.umd.js',
-          cjs: 'hyde-security-js.cjs.js'
+    emptyOutDir: mode !== 'umd',
+    sourcemap: true,
+    lib: mode === 'umd'
+      ? {
+          entry: 'src/index.ts',
+          name: 'HydeSecurity',
+          formats: ['umd'],
+          fileName: () => 'hyde-security-js.umd.js'
         }
-        return formatMap[format] || `hyde-security-js.${format}.js`
-      }
-    },
+      : {
+          entry: {
+            'hyde-security-js': 'src/index.ts',
+            react: 'src/react.ts'
+          },
+          formats: ['es', 'cjs'],
+          fileName: (format, entryName) => format === 'es' ? `${entryName}.esm.mjs` : `${entryName}.cjs.js`
+        },
     rollupOptions: {
-      external: [
-        'react',
-        'react-dom',
-        'react/jsx-runtime'
-      ],
-      output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          'react/jsx-runtime': 'jsxRuntime'
-        }
-      }
-    },
-    sourcemap: true
+      external: mode === 'umd'
+        ? reactExternals
+        : (id: string) => reactExternals.includes(id) || isDependency(id),
+      output: { globals }
+    }
   }
-})
+}))

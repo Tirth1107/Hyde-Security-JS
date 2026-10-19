@@ -2,7 +2,7 @@ import { uid, now } from '../core/utils'
 import { HydeSecurityEvent } from '../core/config'
 import devtoolsDetector from 'devtools-detector'
 
-let intervalId: any = null
+let intervalId: ReturnType<typeof setInterval> | null = null
 let enabled = false
 let onThreat: ((ev: HydeSecurityEvent) => void) | undefined
 
@@ -54,7 +54,7 @@ function showOverlay(message = 'Security triggered') {
   overlayEl.style.alignItems = 'center'
   overlayEl.style.justifyContent = 'center'
   overlayEl.style.fontSize = '20px'
-  overlayEl.innerText = message
+  overlayEl.textContent = message
   document.body.appendChild(overlayEl)
 }
 
@@ -64,60 +64,71 @@ function hideOverlay() {
   overlayEl = null
 }
 
-const handleDevToolsOpen = (isOpen: boolean) => {
-  if (isOpen && enabled) {
-    report('devtools_detected', { method: 'devtools-detector library' })
-    // We don't auto-lock here because we rely on the interval to check cfg.autoLock,
-    // or we can lock it directly. 
-  }
+let detectorListener: ((isOpen: boolean) => void) | null = null
+let detectorOpen = false
+
+export interface AntiDevtoolsOptions {
+  onThreat?: (ev: HydeSecurityEvent) => void
+  /** Show a lock overlay when DevTools are detected */
+  autoLock?: boolean
+  /**
+   * Run a `debugger` statement on an interval. It pauses the page for anyone
+   * with DevTools open, so it is off by default (on in strict mode).
+   */
+  debuggerTrap?: boolean
+  /** @deprecated Not used */
+  mode?: string
 }
 
 export const antiDevtools = {
-  enable(cfg?: { onThreat?: (ev: HydeSecurityEvent) => void; mode?: string; autoLock?: boolean }) {
+  enable(cfg?: AntiDevtoolsOptions) {
     if (enabled) return
     enabled = true
     onThreat = cfg?.onThreat
     detachKeyBlocker = attachKeyBlocker()
-    
-    // Add third-party detector
-    devtoolsDetector.addListener((isOpen) => {
-      if (isOpen) {
-        report('devtools_detected', { method: 'devtools-detector library' })
-        if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
-      }
-    })
+
+    // One listener per enable(); removed again in disable()
+    detectorListener = (isOpen: boolean) => {
+      detectorOpen = isOpen
+      if (!isOpen || !enabled) return
+      report('devtools_detected', { method: 'devtools-detector' })
+      if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
+    }
+    devtoolsDetector.addListener(detectorListener)
     devtoolsDetector.launch()
 
-    intervalId = setInterval(() => {
-      const signals: string[] = []
-      
-      // Aggressive V1 trap: manually halt with debugger
-      if (trapDebugger()) signals.push('debugger_trap')
-
-      if (signals.length > 0) {
-        report('devtools_detected', { method: signals.join(', '), signals })
-        if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
-      }
-    }, 1500)
+    if (cfg?.debuggerTrap) {
+      intervalId = setInterval(() => {
+        if (trapDebugger()) {
+          report('devtools_detected', { method: 'debugger_trap', signals: ['debugger_trap'] })
+          if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
+        }
+      }, 1500)
+    }
   },
   disable() {
     if (!enabled) return
-    clearInterval(intervalId)
-    detachKeyBlocker && detachKeyBlocker()
+    if (intervalId) clearInterval(intervalId)
+    intervalId = null
+    if (detachKeyBlocker) detachKeyBlocker()
+    detachKeyBlocker = null
     hideOverlay()
-    
-    // Stop third-party detector
+
+    if (detectorListener) devtoolsDetector.removeListener(detectorListener)
+    detectorListener = null
     devtoolsDetector.stop()
-    // It doesn't have a removeAllListeners, but stop() halts the loop.
-    
+    detectorOpen = false
     enabled = false
   },
+  /** Whether the module is currently running */
+  isEnabled() {
+    return enabled
+  },
   /**
-   * One-shot detection: returns all active devtools signals right now.
+   * One-shot check based on the last result from devtools-detector.
    */
   detect(): { open: boolean; signals: string[] } {
-    const open = (devtoolsDetector as any).isOpen || false
-    return { open, signals: open ? ['devtools-detector'] : [] }
+    return { open: detectorOpen, signals: detectorOpen ? ['devtools-detector'] : [] }
   },
   lockScreen(reason?: string) {
     showOverlay(reason || 'Security locked')

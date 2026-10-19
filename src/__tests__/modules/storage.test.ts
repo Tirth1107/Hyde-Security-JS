@@ -3,7 +3,6 @@ import { storage } from '../../modules/storage'
 
 describe('Secure Storage Module', () => {
   const key = 'test-key'
-  const secret = 'test-secret-12345'
 
   beforeEach(() => {
     localStorage.clear()

@@ -113,14 +113,20 @@ interface HydeSecurityConfig {
   enableAntiScreenCapture?: boolean
   enableAntiIframe?: boolean
   allowedIframes?: string[]
+  enableDebuggerTrap?: boolean  // `debugger` pause trap (default: strict mode only)
+  encryptionKey?: string        // Default key for encryptText / storage encryption
 }
 ```
+
+> 🔑 **Set an `encryptionKey`.** Without one, encryption falls back to a built-in key that is
+> public (it ships in this package) and a warning is logged. You can also call
+> `HydeSecurity.modules.encryption.setDefaultKey(key)`.
 
 ## 🛡️ Core Features (v1.1.0)
 
 ### 1. Anti-DevTools & Anti-Debug
 Detects when users open DevTools and optional UI locking.
-- Detects size traps, debugger timing, console latency, and Firebug.
+- Detects open DevTools via `devtools-detector`; the `debugger` timing trap runs in strict mode only (it pauses the page while DevTools are open).
 - Blocks F12, Ctrl+Shift+I/J/C, and Ctrl+U.
 
 ### 2. Content Protection (Anti-Copy, Print, Screen Capture)
@@ -146,8 +152,8 @@ Detects when users open DevTools and optional UI locking.
 - **CSRF Protection**: `csrfProtection.attachToAxios(client)` auto-injects CSRF tokens from meta tags.
 
 ### 6. Network & Integrity
-- **Request Signing**: `network.createClient({ sign: true })` signs requests using HMAC-SHA256.
-- **Auto-Retry**: Network client automatically retries 5xx errors with exponential backoff.
+- **Request Signing**: `network.createClient({ sign: true, deriveKey: 'your-key' })` signs requests using HMAC-SHA256.
+- **Auto-Retry**: Network client retries network errors and 5xx with exponential backoff (`retries`, default 3). Only safe methods (GET, HEAD, OPTIONS, PUT, DELETE) retry unless `retryNonIdempotent: true`.
 - **Script Integrity**: `integrity.checkScriptIntegrity(src, hash)` verifies external scripts via SHA-256.
 
 ### 7. 🌟 Pro Features (v1.5.0)

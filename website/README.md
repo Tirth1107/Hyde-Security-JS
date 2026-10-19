@@ -1,32 +1,33 @@
-# React + TypeScript + Vite
+# HydeSecurity JS — Demo Website
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Interactive dashboard that shows every HydeSecurity feature working live.
+Built with Vite + React 19 + TypeScript.
 
-Currently, two official plugins are available:
+It imports the library straight from `../src` (see the `hyde-security-js`
+alias in `vite.config.ts`), so changes to the library show up right away —
+no build or publish needed.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Run it
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+cd website
+npm install
+npm run dev      # http://localhost:5173
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Other scripts:
+
+| Command | What it does |
+|---|---|
+| `npm run build` | Type-check and build to `website/dist` |
+| `npm run preview` | Serve the built site |
+| `npm run lint` | Lint with oxlint |
+
+From the repo root, `npm run build:website` runs the same build.
+
+## Layout
+
+- `src/App.tsx` — dashboard shell, sidebar categories, `HydeSecurityProvider` setup
+- `src/components/demos/` — one demo component per feature
+- `src/components/LiveLogger.tsx` — shows `hyde:threat` events as they happen
+- `src/components/FeatureCard.tsx` — card wrapper used by each demo
