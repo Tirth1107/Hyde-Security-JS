@@ -1,5 +1,6 @@
 import { uid, now } from '../core/utils'
 import { HydeSecurityEvent } from '../core/config'
+import devtoolsDetector from 'devtools-detector'
 
 let intervalId: any = null
 let enabled = false
@@ -11,86 +12,12 @@ function report(type: string, details?: Record<string, any>) {
   return ev
 }
 
-function checkBySize() {
-  try {
-    const threshold = 160
-    const opened = window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold
-    return opened
-  } catch (e) {
-    return false
-  }
-}
-
 function trapDebugger() {
   const start = performance.now()
   // eslint-disable-next-line no-debugger
   debugger
   const delta = performance.now() - start
   return delta > 200
-}
-
-/**
- * Console timing trap: console.log is significantly slower when devtools is open
- * because the console panel has to render the output.
- */
-function checkConsoleLatency(): boolean {
-  try {
-    const before = performance.now()
-    // console.log with a complex object triggers rendering in devtools
-    console.log('%c', 'font-size:0;')
-    console.clear()
-    const delta = performance.now() - before
-    return delta > 20 // devtools adds 20ms+ overhead
-  } catch (e) {
-    return false
-  }
-}
-
-/**
- * Object toString trap: When devtools inspects an object,
- * it calls toString/valueOf — we can detect this.
- */
-function checkToStringTrap(): boolean {
-  let devtoolsOpen = false
-  const el = new Image()
-  Object.defineProperty(el, 'id', {
-    get: () => {
-      devtoolsOpen = true
-      return ''
-    }
-  })
-  // console.log triggers the id getter ONLY when devtools is open
-  console.log(el)
-  console.clear()
-  return devtoolsOpen
-}
-
-/**
- * Regex toString trap: Regular expressions' toString is called
- * when logged to the console with devtools open.
- */
-function checkRegexTrap(): boolean {
-  let devtoolsOpen = false
-  const r = /./
-  r.toString = () => {
-    devtoolsOpen = true
-    return ''
-  }
-  console.log(r)
-  console.clear()
-  return devtoolsOpen
-}
-
-/**
- * Firebug detection: checks for Firebug's global objects.
- */
-function checkFirebug(): boolean {
-  try {
-    return !!(window as any).Firebug || !!(window as any).console?.firebug ||
-      (typeof (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined')
-  } catch (e) {
-    return false
-  }
 }
 
 function attachKeyBlocker() {
@@ -137,20 +64,35 @@ function hideOverlay() {
   overlayEl = null
 }
 
+const handleDevToolsOpen = (isOpen: boolean) => {
+  if (isOpen && enabled) {
+    report('devtools_detected', { method: 'devtools-detector library' })
+    // We don't auto-lock here because we rely on the interval to check cfg.autoLock,
+    // or we can lock it directly. 
+  }
+}
+
 export const antiDevtools = {
   enable(cfg?: { onThreat?: (ev: HydeSecurityEvent) => void; mode?: string; autoLock?: boolean }) {
     if (enabled) return
     enabled = true
     onThreat = cfg?.onThreat
     detachKeyBlocker = attachKeyBlocker()
+    
+    // Add third-party detector
+    devtoolsDetector.addListener((isOpen) => {
+      if (isOpen) {
+        report('devtools_detected', { method: 'devtools-detector library' })
+        if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
+      }
+    })
+    devtoolsDetector.launch()
+
     intervalId = setInterval(() => {
       const signals: string[] = []
-      if (checkBySize()) signals.push('size_delta')
+      
+      // Aggressive V1 trap: manually halt with debugger
       if (trapDebugger()) signals.push('debugger_trap')
-      if (checkConsoleLatency()) signals.push('console_latency')
-      if (checkToStringTrap()) signals.push('toString_trap')
-      if (checkRegexTrap()) signals.push('regex_trap')
-      if (checkFirebug()) signals.push('firebug')
 
       if (signals.length > 0) {
         report('devtools_detected', { method: signals.join(', '), signals })
@@ -163,17 +105,19 @@ export const antiDevtools = {
     clearInterval(intervalId)
     detachKeyBlocker && detachKeyBlocker()
     hideOverlay()
+    
+    // Stop third-party detector
+    devtoolsDetector.stop()
+    // It doesn't have a removeAllListeners, but stop() halts the loop.
+    
     enabled = false
   },
   /**
    * One-shot detection: returns all active devtools signals right now.
    */
   detect(): { open: boolean; signals: string[] } {
-    const signals: string[] = []
-    if (checkBySize()) signals.push('size_delta')
-    if (checkFirebug()) signals.push('firebug')
-    // Note: debugger trap is not included in one-shot because it pauses execution
-    return { open: signals.length > 0, signals }
+    const open = (devtoolsDetector as any).isOpen || false
+    return { open, signals: open ? ['devtools-detector'] : [] }
   },
   lockScreen(reason?: string) {
     showOverlay(reason || 'Security locked')

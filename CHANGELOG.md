@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-06-29
+
+### Added (Pro Features)
+- **Self-Healing DOM** (`domGuard`) — When `selfHealing: true` is passed, tampered or deleted elements are instantly reconstructed from memory.
+- **Behavioral Biometrics** (`biometrics`) — New module to analyze mouse trajectories, velocity, and keystroke flight times for advanced bot vs human probability scoring.
+- **Advanced Anti-Clickjacking** (`antiClickjacking`) — New module utilizing `IntersectionObserver v2` to detect visibility, occlusion, and CSS transforms on sensitive UI components.
+- **Zero-Trust Network Firewall** (`networkFirewall`) — API interceptor for `fetch` and `XMLHttpRequest` to strictly allowlist domains, stopping data exfiltration attacks.
+
 ## [1.1.0] - 2026-06-19
 
 ### Added

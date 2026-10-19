@@ -11,7 +11,7 @@ export interface HydeSecurityContextType {
 const HydeContext = createContext<HydeSecurityContextType>({ 
   config: defaultConfig,
   isInitialized: false,
-  security: HydeSecurity
+  security: null as any
 })
 
 export function HydeSecurityProvider({ config, children }: { config: HydeSecurityConfig; children: React.ReactNode }) {

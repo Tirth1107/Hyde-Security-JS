@@ -30,6 +30,9 @@ import { antiScreenCapture } from './modules/antiScreenCapture'
 import { csrfProtection } from './modules/csrfProtection'
 import { contentSecurityPolicy } from './modules/contentSecurityPolicy'
 import { inputValidation } from './modules/inputValidation'
+import { biometrics } from './modules/biometrics'
+import { antiClickjacking } from './modules/antiClickjacking'
+import { networkFirewall } from './modules/networkFirewall'
 import { HydeSecurityProvider } from './modules/react/HydeSecurityProvider'
 import { useHydeSecurity } from './modules/react/useHydeSecurity'
 
@@ -112,7 +115,7 @@ const API = {
   },
 
   getVersion() {
-    return '1.1.0'
+    return '1.5.0'
   },
   
   toast(msg: string) {
@@ -207,7 +210,10 @@ const API = {
     antiScreenCapture,
     csrfProtection,
     contentSecurityPolicy,
-    inputValidation
+    inputValidation,
+    biometrics,
+    antiClickjacking,
+    networkFirewall
   }
 }
 

@@ -1,0 +1,5 @@
+# Store text files with LF in git, regardless of OS
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
