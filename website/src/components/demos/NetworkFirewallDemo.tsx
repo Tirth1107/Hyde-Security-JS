@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const NetworkFirewallDemo = () => {
   const security = useHydeSecurity()

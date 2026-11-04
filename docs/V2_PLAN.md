@@ -27,7 +27,7 @@ injection, phishing overlays, insecure messaging).
 
 ## Breaking changes
 
-1. React exports only from `@tirth1107/hyde-security-js/react`.
+1. React exports only from `hyde-security-js/react`.
 2. Encryption is async Web Crypto (AES-256-GCM, PBKDF2-SHA256 600k). No built-in key —
    a key is required. CryptoJS ciphertexts can still be read with `encryption.decryptLegacy()`.
 3. `storage.set(..., { encrypt })` → `storage.setEncrypted()` / `getEncrypted()` (async).

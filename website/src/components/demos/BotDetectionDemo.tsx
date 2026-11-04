@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const BotDetectionDemo = () => {
   const security = useHydeSecurity()
@@ -14,7 +14,7 @@ const BotDetectionDemo = () => {
       trackerRef.current = bot.detectFastTyping(inputRef.current, 30)
       
       const onPaste = () => {
-        setStatus({ text: '🤖 PASTE DETECTED', type: 'error' })
+        setStatus({ text: 'PASTE DETECTED', type: 'error' })
         emitLog('bot-detect', 'Paste event detected on input!', 'error')
       }
       bot.detectPaste(inputRef.current, onPaste)
@@ -25,10 +25,10 @@ const BotDetectionDemo = () => {
     if (!trackerRef.current) return
     const stats = trackerRef.current.getStats()
     if (trackerRef.current.isBot()) {
-      setStatus({ text: `🤖 BOT (${stats.fast}/${stats.total} fast keys)`, type: 'error' })
+      setStatus({ text: `BOT (${stats.fast}/${stats.total} fast keys)`, type: 'error' })
       emitLog('bot-detect', `Superhuman typing: ${stats.fast}/${stats.total} keystrokes too fast`, 'error')
     } else {
-      setStatus({ text: `👤 Human (${stats.total} keys)`, type: 'success' })
+      setStatus({ text: `Human (${stats.total} keys)`, type: 'success' })
     }
   }
 

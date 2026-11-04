@@ -1,6 +1,15 @@
 # Migrating from v1 to v2
 
-Most apps need only the changes in **1–4**.
+Most apps need only the changes in **0–4**.
+
+## 0. The package has a new name
+
+```bash
+npm uninstall @tirth1107/hyde-security-js
+npm install hyde-security-js
+```
+
+Replace `@tirth1107/hyde-security-js` with `hyde-security-js` in your imports (and `/react` with `hyde-security-js/react`).
 
 ## 1. Encryption is async and needs a key
 
@@ -40,8 +49,8 @@ v1 data encrypted without a key used `'hyde_default_key'`. Pass that as `oldKey`
 ## 3. React imports come from `/react`
 
 ```diff
-- import { HydeSecurityProvider, useHydeSecurity } from '@tirth1107/hyde-security-js'
-+ import { HydeSecurityProvider, useHydeSecurity } from '@tirth1107/hyde-security-js/react'
+- import { HydeSecurityProvider, useHydeSecurity } from 'hyde-security-js'
++ import { HydeSecurityProvider, useHydeSecurity } from 'hyde-security-js/react'
 ```
 
 The main entry no longer imports React, so vanilla apps don't need it installed. New hooks: `useThreats()` and `useSecurityAudit()`.
@@ -82,5 +91,5 @@ The `hyde:threat` DOM event is still dispatched on `document`. Its `detail` cont
 - **`networkFirewall.enable(['host'], onBlocked)`** still works. The options form adds `mode`, `resources`, and more channels.
 - **`antiIframe`** uses `location.ancestorOrigins` when available. Turn off the top-window redirect with `breakOut: false`.
 - **`protectElement(selector, selfHealing?)`** has a second argument.
-- **Removed dependencies:** `jose`, `nanoid`, `toastify-js`, `uuid`. DOMPurify upgraded 2 → 3.4.
+- **Removed dependencies:** `jose`, `nanoid`, `toastify-js`, `uuid`, `devtools-detector` (replaced by built-in, eval-free detection). DOMPurify upgraded 2 → 3.4.
 - **ESM file renamed** to `dist/*.esm.mjs`. Package imports are unaffected.

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const PasswordDemo = () => {
   const security = useHydeSecurity()
@@ -45,7 +45,7 @@ const PasswordDemo = () => {
       </div>
 
       <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: 8 }}>
-        {tips.length > 0 && <div>💡 {tips.slice(0, 3).join(' • ')}</div>}
+        {tips.length > 0 && <div>{tips.slice(0, 3).join(' • ')}</div>}
       </div>
 
       <div style={{ fontSize: '11px', marginTop: 4 }}>

@@ -1,3 +1,7 @@
+import { createReporter } from '../core/events'
+
+const reporter = createReporter('antiBot', 'info')
+
 export const antiBot = {
   /**
    * Detect superhuman typing speeds on an input element.
@@ -28,6 +32,7 @@ export const antiBot = {
    */
   detectPaste(el: HTMLInputElement | HTMLTextAreaElement, onPaste?: (e: ClipboardEvent) => void) {
     const handler = (e: Event) => {
+      reporter.report('paste_detected', { field: el.name || el.id || el.tagName.toLowerCase() })
       onPaste?.(e as ClipboardEvent)
     }
     el.addEventListener('paste', handler)
@@ -72,10 +77,9 @@ export const antiBot = {
       signals.push('No network connection info')
     }
 
-    return {
-      isBot: signals.length >= 2,
-      signals
-    }
+    const isBot = signals.length >= 2
+    if (isBot) reporter.report('automated_browser', { signals }, 'warning')
+    return { isBot, signals }
   },
 
   /**
@@ -107,6 +111,7 @@ export const antiBot = {
       if (elapsed < minMs) {
         e.preventDefault()
         isValid = false
+        reporter.report('form_submitted_too_fast', { elapsedMs: elapsed, minMs }, 'warning')
       } else {
         isValid = true
       }

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const AntiScreenCaptureDemo = () => {
   const security = useHydeSecurity()
@@ -9,7 +9,7 @@ const AntiScreenCaptureDemo = () => {
     const sc = (security as any).modules?.antiScreenCapture
     if (sc) {
       sc.enable({
-        onThreat: (ev: any) => emitLog('screen-capture', 'Screenshot shortcut detected!', 'error')
+        onThreat: () => emitLog('screen-capture', 'Screenshot shortcut detected!', 'error')
       })
       emitLog('screen-capture', 'Screenshot shortcut deterrence ENABLED', 'success')
     }

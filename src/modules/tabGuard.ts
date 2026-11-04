@@ -25,9 +25,9 @@ function createBlurOverlay() {
     text-align: center; color: #fff; font-family: system-ui, sans-serif;
   `
     warningOverlay.innerHTML = `
-    <div style="font-size: 48px; margin-bottom: 12px;">🛡️</div>
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px;" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"/></svg>
     <div style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">Privacy Shield Active</div>
-    <div style="font-size: 13px; color: rgba(255,255,255,0.6);">Content hidden — return to this tab to continue</div>
+    <div style="font-size: 13px; color: rgba(255,255,255,0.6);">Content hidden. Return to this tab to continue</div>
   `
     blurOverlay.appendChild(warningOverlay)
     document.body.appendChild(blurOverlay)

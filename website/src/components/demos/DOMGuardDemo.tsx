@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const DOMGuardDemo = () => {
   const security = useHydeSecurity()
@@ -15,7 +15,7 @@ const DOMGuardDemo = () => {
   const simulateTamper = () => {
     const text = document.getElementById('guarded-text')
     if (text) {
-      text.textContent = '🚨 TAMPERED CONTENT — ' + Date.now()
+      text.textContent = 'TAMPERED CONTENT: ' + Date.now()
       text.style.color = '#ef4444'
     } else {
       const el = document.getElementById('guarded-el')

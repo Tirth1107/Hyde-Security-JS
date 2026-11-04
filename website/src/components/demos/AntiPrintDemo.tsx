@@ -1,6 +1,6 @@
 import React from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const AntiPrintDemo = () => {
   const security = useHydeSecurity()
@@ -9,7 +9,7 @@ const AntiPrintDemo = () => {
     const ap = (security as any).modules?.antiPrint
     if (ap) {
       ap.enable({
-        onThreat: (ev: any) => emitLog('print', 'Print attempt detected & blurred!', 'error')
+        onThreat: () => emitLog('print', 'Print attempt detected & blurred!', 'error')
       })
       emitLog('print', 'Anti-print ENABLED', 'success')
     }

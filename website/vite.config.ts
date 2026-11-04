@@ -10,6 +10,10 @@ export default defineConfig({
     // The library reads its version from this at build time
     __HYDE_VERSION__: JSON.stringify(pkg.version)
   },
+  build: {
+    // zxcvbn (password strength word lists, ~800 KB) is its own lazy chunk
+    chunkSizeWarningLimit: 900
+  },
   resolve: {
     // Library source in ../src would otherwise pick up the root's React copy
     dedupe: ['react', 'react-dom'],

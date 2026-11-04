@@ -1,6 +1,6 @@
 import React from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const AntiDevToolsDemo = () => {
   const security = useHydeSecurity()
@@ -24,7 +24,7 @@ const AntiDevToolsDemo = () => {
   }
 
   const lockScr = () => {
-    security.lockScreen?.('⚠️ Security Lock — DevTools detected')
+    security.lockScreen?.('Security Lock — DevTools detected')
     emitLog('devtools', 'Screen LOCKED', 'error')
   }
 
@@ -36,7 +36,7 @@ const AntiDevToolsDemo = () => {
   return (
     <>
       <p style={{ fontSize: '13px', color: '#f59e0b', margin: '0 0 12px 0' }}>
-        ⚠️ <strong>Aggressive V1 Mode:</strong> Enabling this will unleash the aggressive <code>debugger</code> loop, actively crippling the DevTools panel if opened!
+        <strong>Aggressive V1 Mode:</strong> Enabling this will unleash the aggressive <code>debugger</code> loop, actively crippling the DevTools panel if opened!
       </p>
       <div className="btn-row">
         <button onClick={enableDT}>Enable Detection</button>

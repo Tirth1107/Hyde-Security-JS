@@ -129,12 +129,12 @@
 </head>
 <body>
   <div class="container">
-    <h1>🔥 HydeSecurityJS v1.0.0 - Manual Testing</h1>
+    <h1>HydeSecurityJS v1.0.0 - Manual Testing</h1>
     <p class="subtitle">Test all security features manually in your browser</p>
 
     <!-- Encryption Tests -->
     <div class="test-section">
-      <h2>🔐 Encryption Tests</h2>
+      <h2>Encryption Tests</h2>
       <div class="test-group">
         <label>Text to encrypt:</label>
         <input type="text" id="plaintext" placeholder="Enter text to encrypt" value="Hello World">
@@ -146,7 +146,7 @@
 
     <!-- Sanitization Tests -->
     <div class="test-section">
-      <h2>🛡️ Sanitization Tests</h2>
+      <h2>Sanitization Tests</h2>
       <div class="test-group">
         <label>HTML to sanitize:</label>
         <textarea id="html-input" placeholder="Enter HTML..." rows="4"><img src=x onerror="alert('XSS')"><b>Safe</b></textarea>
@@ -158,7 +158,7 @@
 
     <!-- Storage Tests -->
     <div class="test-section">
-      <h2>💾 Storage Tests</h2>
+      <h2>Storage Tests</h2>
       <div class="test-group">
         <button onclick="testStorageSet()" class="success">Store Data</button>
         <button onclick="testStorageGet()">Retrieve Data</button>
@@ -169,7 +169,7 @@
 
     <!-- Anti-DevTools Tests -->
     <div class="test-section">
-      <h2>🚫 Anti-DevTools Tests</h2>
+      <h2>Anti-DevTools Tests</h2>
       <div class="test-group">
         <p style="margin-bottom: 10px; color: #666;">Try opening DevTools (F12) - Watch for detection!</p>
         <button onclick="enableAntiDevtools()" class="success">Enable Anti-DevTools</button>
@@ -192,7 +192,7 @@
 
     <!-- DOM Protection Tests -->
     <div class="test-section">
-      <h2>📝 DOM Protection Tests</h2>
+      <h2>DOM Protection Tests</h2>
       <div class="test-group">
         <div id="protected-element" style="padding: 10px; background: #e6fffa; border: 2px solid #38a169; border-radius: 5px; margin-bottom: 10px;">
           <strong>Protected Element</strong> - Try to modify me via DevTools console
@@ -205,7 +205,7 @@
 
     <!-- Toast Notifications -->
     <div class="test-section">
-      <h2>🔔 Notifications</h2>
+      <h2>Notifications</h2>
       <div class="test-group">
         <button onclick="showToast('Success!', 'success')" class="success">Show Toast</button>
         <button onclick="lockUI()" class="danger">Lock Screen</button>
@@ -215,7 +215,7 @@
 
     <!-- Test Results Summary -->
     <div class="test-section">
-      <h2>📊 Test Results</h2>
+      <h2>Test Results</h2>
       <div id="results-summary">
         <span class="stat">Encryption: ✓</span>
         <span class="stat">Sanitization: ✓</span>
@@ -320,7 +320,7 @@
       try {
         HydeSecurity.modules.antiDevtools.enable({
           onThreat: (ev) => {
-            updateOutput('devtools-output', `🚨 ${ev.type} detected!`)
+            updateOutput('devtools-output', `${ev.type} detected!`)
             addLog(`Threat: ${ev.type}`)
           }
         })
@@ -342,7 +342,7 @@
     }
 
     window.testDevtoolsManual = function() {
-      updateOutput('devtools-output', '🚨 DevTools detection simulated')
+      updateOutput('devtools-output', 'DevTools detection simulated')
       addLog('Simulated DevTools detection')
     }
 
@@ -396,7 +396,7 @@
     }
 
     window.lockUI = function() {
-      HydeSecurity.lockScreen('🔒 System secured')
+      HydeSecurity.lockScreen('System secured')
     }
 
     window.unlockUI = function() {
@@ -409,7 +409,7 @@
       mode: 'balanced',
       enableLogs: true,
       onThreatDetected: (ev) => {
-        console.warn('🚨 Threat:', ev)
+        console.warn('Threat:', ev)
       }
     })
 

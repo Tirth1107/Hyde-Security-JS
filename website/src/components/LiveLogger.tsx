@@ -83,9 +83,4 @@ const LiveLogger = ({ open, onClose }: { open: boolean, onClose: () => void }) =
   )
 }
 
-// Helper utility for components to dispatch logs to the terminal
-export const emitLog = (source: string, msg: string, level: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-  window.dispatchEvent(new CustomEvent('demo:log', { detail: { source, msg, level } }))
-}
-
 export default LiveLogger

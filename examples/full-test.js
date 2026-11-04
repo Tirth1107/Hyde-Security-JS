@@ -35,7 +35,7 @@
       const c = el('toasts');
       const d = document.createElement('div');
       d.className = `toast ${isAlert ? 'alert' : ''}`;
-      d.innerHTML = `<span>${isAlert ? '⚠️' : '🛡️'}</span> ${msg}`;
+      d.innerHTML = `<span>${isAlert ? '' : ''}</span> ${msg}`;
       c.appendChild(d);
       setTimeout(() => { d.style.opacity = '0'; d.style.transition = 'opacity 0.3s'; setTimeout(() => d.remove(), 300); }, 3000);
     };
@@ -90,8 +90,8 @@
           <input id="enc-key" placeholder="Encryption key (optional)" value="my-secret-key">
           <input id="enc-input" placeholder="Enter sensitive data..." value="Secret API Key: sk-12345">
           <div class="btn-row" style="margin-top:6px">
-            <button onclick="doEncrypt()" style="flex:1">🔒 Encrypt</button>
-            <button onclick="doDecrypt()" class="btn-ghost" style="flex:1">🔓 Decrypt</button>
+            <button onclick="doEncrypt()" style="flex:1">Encrypt</button>
+            <button onclick="doDecrypt()" class="btn-ghost" style="flex:1">Decrypt</button>
           </div>
           <div id="enc-res" class="code-out" style="margin-top:8px">// Result appears here</div>
         `,
@@ -161,7 +161,7 @@
 
             // Feedback
             const tips = HS.modules.passwordStrength.generateSuggestions(val);
-            el('pwd-feedback').innerHTML = tips.length > 0 ? '💡 ' + tips.slice(0, 3).join(' • ') : '';
+            el('pwd-feedback').innerHTML = tips.length > 0 ? '' + tips.slice(0, 3).join(' • ') : '';
 
             log('password', `Score: ${result.score}/4 — ${result.label}`, result.score >= 3 ? 'success' : 'info');
           });
@@ -247,7 +247,7 @@
           const inp = el('bot-input');
           const tracker = HS.modules.antiBot.detectFastTyping(inp, 30);
           HS.modules.antiBot.detectPaste(inp, (e) => {
-            el('bot-status').innerHTML = 'Status: <span style="color:#ef4444">🤖 PASTE DETECTED</span>';
+            el('bot-status').innerHTML = 'Status: <span style="color:#ef4444">PASTE DETECTED</span>';
             log('bot', 'Paste event detected on input!', 'error');
             inp.style.borderColor = '#ef4444';
           });
@@ -255,11 +255,11 @@
           inp.addEventListener('keyup', () => {
             const stats = tracker.getStats();
             if (tracker.isBot()) {
-              el('bot-status').innerHTML = `Status: <span style="color:#ef4444">🤖 BOT (${stats.fast}/${stats.total} fast)</span>`;
+              el('bot-status').innerHTML = `Status: <span style="color:#ef4444">BOT (${stats.fast}/${stats.total} fast)</span>`;
               inp.style.borderColor = '#ef4444';
               log('bot', `Superhuman typing: ${stats.fast}/${stats.total} keystrokes too fast`, 'error');
             } else {
-              el('bot-status').innerHTML = `Status: <span style="color:#22c55e">👤 Human (${stats.total} keys)</span>`;
+              el('bot-status').innerHTML = `Status: <span style="color:#22c55e">Human (${stats.total} keys)</span>`;
               inp.style.borderColor = '';
             }
           });
@@ -268,7 +268,7 @@
             inp.value = 'AutomatedBotInput12345';
             inp.dispatchEvent(new Event('paste', { bubbles: true }));
             log('bot', 'Bot paste simulation triggered', 'error');
-            el('bot-status').innerHTML = 'Status: <span style="color:#ef4444">🤖 BOT DETECTED</span>';
+            el('bot-status').innerHTML = 'Status: <span style="color:#ef4444">BOT DETECTED</span>';
             inp.style.borderColor = '#ef4444';
           };
           window.checkHeadless = () => {
@@ -327,7 +327,7 @@
         id: 'devtools', title: 'Anti-DevTools', cat: 'Detection', badge: 'badge-detect',
         desc: 'Detects DevTools via window size delta and debugger traps.',
         render: () => `
-          <p class="desc" style="color:#f59e0b">⚠️ Enabling in strict mode may trigger debugger pauses.</p>
+          <p class="desc" style="color:#f59e0b">Enabling in strict mode may trigger debugger pauses.</p>
           <div class="btn-row" style="margin-top:6px">
             <button onclick="enableDT()">Enable Detection</button>
             <button class="btn-ghost" onclick="disableDT()">Disable</button>
@@ -347,7 +347,7 @@
             log('devtools', 'DevTools detection DISABLED', 'info');
           };
           window.lockScr = () => {
-            HS.lockScreen('⚠️ Security Lock — DevTools detected');
+            HS.lockScreen('Security Lock — DevTools detected');
             log('devtools', 'Screen LOCKED', 'error');
           };
           window.unlockScr = () => {
@@ -424,11 +424,11 @@
           window.checkIframe = () => {
             try {
               const inIframe = window.self !== window.top;
-              el('iframe-result').textContent = inIframe ? '⚠️ Running inside an iframe!' : '✅ Running as top-level window';
+              el('iframe-result').textContent = inIframe ? 'Running inside an iframe!' : 'Running as top-level window';
               el('iframe-result').style.color = inIframe ? '#ef4444' : '#22c55e';
               log('iframe', inIframe ? 'Iframe detected!' : 'Not in iframe — safe', inIframe ? 'error' : 'success');
             } catch (e) {
-              el('iframe-result').textContent = '⚠️ Cross-origin iframe detected (access blocked)';
+              el('iframe-result').textContent = 'Cross-origin iframe detected (access blocked)';
               log('iframe', 'Cross-origin iframe detection blocked', 'error');
             }
           };
@@ -596,7 +596,7 @@
           window.guardTamper = () => {
             const text = el('guarded-text');
             if(text) {
-              text.textContent = '🚨 TAMPERED CONTENT — ' + Date.now();
+              text.textContent = 'TAMPERED CONTENT: ' + Date.now();
               text.style.color = '#ef4444';
             } else {
               el('guarded-el').remove();
@@ -749,7 +749,7 @@
               }
             });
             log('tabguard', 'Tab Guard ENABLED — try switching tabs!', 'success');
-            el('tab-result').textContent = '🛡️ Active — switch to another tab to test';
+            el('tab-result').textContent = 'Active — switch to another tab to test';
             el('tab-result').style.color = '#22c55e';
           };
           window.disableTabGuard = () => {
@@ -813,12 +813,12 @@
           };
           window.obfDisableConsole = () => {
             restoreConsole = HS.modules.obfuscator.disableConsole();
-            el('obf-result').textContent = '🔇 Console methods disabled — open DevTools to verify';
+            el('obf-result').textContent = 'Console methods disabled — open DevTools to verify';
             log('obfuscator', 'Console disabled', 'error');
           };
           window.obfRestoreConsole = () => {
             if (restoreConsole) { restoreConsole(); restoreConsole = null; }
-            el('obf-result').textContent = '🔊 Console restored';
+            el('obf-result').textContent = 'Console restored';
             log('obfuscator', 'Console restored', 'success');
           };
           window.obfProtectFn = () => {
@@ -851,7 +851,7 @@
               }
             });
             log('screenshot', 'Anti-screenshot ENABLED', 'success');
-            el('ss-result').textContent = '🛡️ Active — try PrtScn key';
+            el('ss-result').textContent = 'Active — try PrtScn key';
             el('ss-result').style.color = '#22c55e';
           };
           window.disableAntiSS = () => {
@@ -1009,8 +1009,8 @@
           window.runBotDetect = () => {
             const result = HS.detectBot();
             el('config-bot').textContent = result.isBot
-              ? `🤖 Bot detected! Signals: ${result.signals.join(', ')}`
-              : `👤 Looks human. Weak signals: ${result.signals.length}`;
+              ? `Bot detected! Signals: ${result.signals.join(', ')}`
+              : `Looks human. Weak signals: ${result.signals.length}`;
             el('config-bot').style.color = result.isBot ? '#ef4444' : '#22c55e';
             log('config', result.isBot ? 'Bot detected' : 'No bot signals', result.isBot ? 'error' : 'success');
           };
@@ -1048,14 +1048,14 @@
     // ============================
     document.addEventListener('DOMContentLoaded', () => {
       renderDashboard();
-      showToast('🛡️ HydeSecurity Library Loaded — All modules ready');
+      showToast('HydeSecurity Library Loaded — All modules ready');
       el('status-pill').textContent = `Library v1.0.0 — ${features.length} modules`;
     });
 
     // If DOM is already ready
     if (document.readyState !== 'loading') {
       renderDashboard();
-      showToast('🛡️ HydeSecurity Library Loaded — All modules ready');
+      showToast('HydeSecurity Library Loaded — All modules ready');
       el('status-pill').textContent = `Library v1.0.0 — ${features.length} modules`;
     }
   

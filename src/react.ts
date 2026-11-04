@@ -1,5 +1,5 @@
 /**
- * React entry: `import { HydeSecurityProvider } from '@tirth1107/hyde-security-js/react'`
+ * React entry: `import { HydeSecurityProvider } from 'hyde-security-js/react'`
  */
 export { HydeSecurityProvider, useHydeSecurityContext } from './modules/react/HydeSecurityProvider'
 export type { HydeSecurityContextType } from './modules/react/HydeSecurityProvider'

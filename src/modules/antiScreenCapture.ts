@@ -92,7 +92,7 @@ export const antiScreenCapture = {
       font-size: 20px; color: red; font-family: system-ui; font-weight: bold;
       pointer-events: none;
     `
-        el.textContent = '⚠️ Screenshot Capture Blocked'
+        el.textContent = 'Screenshot Capture Blocked'
         document.body.appendChild(el)
         setTimeout(() => el.remove(), 200)
     },

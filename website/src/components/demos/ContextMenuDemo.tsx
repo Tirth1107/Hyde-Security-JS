@@ -1,6 +1,6 @@
 import React from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const ContextMenuDemo = () => {
   const security = useHydeSecurity()
@@ -9,7 +9,7 @@ const ContextMenuDemo = () => {
     const ctx = (security as any).modules?.antiContextMenu
     if (ctx) {
       ctx.enable({
-        onThreat: (ev: any) => emitLog('ctx-menu', 'Right-click blocked!', 'error')
+        onThreat: () => emitLog('ctx-menu', 'Right-click blocked!', 'error')
       })
       emitLog('ctx-menu', 'Context menu blocking ENABLED', 'success')
     }

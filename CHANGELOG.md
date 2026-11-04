@@ -5,9 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2026-10-19
+## [2.0.0] - 2026-11-04
 
-A rebuild around current browser threats. See [docs/MIGRATION-v2.md](docs/MIGRATION-v2.md).
+A rebuild around current browser threats. Full notes: [docs/RELEASE_NOTES-v2.0.0.md](docs/RELEASE_NOTES-v2.0.0.md). Upgrade guide: [docs/MIGRATION-v2.md](docs/MIGRATION-v2.md).
+
+### Package
+- **Renamed** to `hyde-security-js` (was `@tirth1107/hyde-security-js` up to 1.1.0).
 
 ### Added — new guards
 - **scriptGuard** — script inventory, allowlist, SRI requirement, change detection between visits, and pre-execution blocking of unauthorized dynamic scripts. JSON audit export for PCI DSS 4.0 req. 6.4.3 / 11.6.1.
@@ -26,6 +29,9 @@ A rebuild around current browser threats. See [docs/MIGRATION-v2.md](docs/MIGRAT
 - **contentSecurityPolicy** — `generateNonce()`, `strict()` preset (nonce + strict-dynamic + Trusted Types), more directives, `parse()`. CSP violations are reported as threats.
 - **Core** — central event bus (`HydeSecurity.on`, `history`), safe layered API patching, call-site attribution, clobbering-proof DOM access, sync SHA-256.
 - **React** — `useThreats()` and `useSecurityAudit()` hooks.
+- **Built-in DevTools detection** (`core/devtoolsDetect`) with no `eval` or `Function()`. Replaces `devtools-detector`, so the UMD bundle also loads under a strict CSP with no reports.
+- **antiBot** paste, headless and fast-submit checks report through the event bus.
+- **Website** rebuilt: overview with a live audit, docs, what's new, and a lazy-loaded playground. Mobile layout.
 - Named exports for every module (tree-shaking).
 
 ### Changed (breaking)
@@ -33,11 +39,12 @@ A rebuild around current browser threats. See [docs/MIGRATION-v2.md](docs/MIGRAT
 - Encrypted storage uses `storage.setEncrypted()` / `getEncrypted()`.
 - React is exported only from `/react`; the main entry no longer imports React.
 - One threat event shape with `source`; several event types renamed.
-- Anti-devtools is strict-only by default; `devtools-detector` is lazy-loaded.
+- Anti-devtools is strict-only by default and uses built-in detection. `antiDevtools.detect()` runs the detectors on demand.
 - Request signing requires `signingKey` (Web Crypto HMAC) and signs a hash of the body.
 - `sanitize.html()` escapes on the server instead of a regex strip.
 - DOMPurify 2 → 3.4 (`preventClobbering` option added).
-- Removed unused dependencies: `jose`, `nanoid`, `toastify-js`, `uuid`.
+- Removed dependencies: `jose`, `nanoid`, `toastify-js`, `uuid`, `devtools-detector`.
+- No emoji in library UI text (overlays, tab-guard shield), docs, examples or the website.
 
 ### Fixed
 - antiScreenCapture never restored `getDisplayMedia`.
@@ -47,7 +54,7 @@ A rebuild around current browser threats. See [docs/MIGRATION-v2.md](docs/MIGRAT
 - The demo site loaded two React copies (`useState` of null). Fixed with Vite `dedupe`.
 
 ### Tests
-- 143 unit tests (jsdom) and a real-browser smoke suite (Chrome + Firefox) covering cross-origin skimmer attribution, pre-execution script blocking, firewall channels, Trusted Types, and postMessage.
+- 151 unit tests (jsdom) and a real-browser smoke suite (Chrome + Firefox) covering cross-origin skimmer attribution, pre-execution script blocking, firewall channels, Trusted Types, postMessage, and DevTools detection under a strict CSP with no eval reports.
 
 ## [1.5.1] - not released separately (included in 2.0.0)
 

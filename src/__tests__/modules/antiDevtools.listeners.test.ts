@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const listeners = new Set<(open: boolean) => void>()
-vi.mock('devtools-detector', () => ({
-  default: {
-    addListener: (fn: (open: boolean) => void) => listeners.add(fn),
-    removeListener: (fn: (open: boolean) => void) => listeners.delete(fn),
+const listeners = new Set<(open: boolean, method: string) => void>()
+vi.mock('../../core/devtoolsDetect', () => ({
+  createDevtoolsDetector: () => ({
+    addListener: (fn: (open: boolean, method: string) => void) => listeners.add(fn),
+    removeListener: (fn: (open: boolean, method: string) => void) => listeners.delete(fn),
     launch: vi.fn(),
     stop: vi.fn(),
-  },
+    check: () => ({ open: false, method: '' }),
+    isOpen: false,
+  }),
 }))
 
 import { antiDevtools } from '../../modules/antiDevtools'
@@ -35,9 +37,10 @@ describe('antiDevtools listener lifecycle', () => {
     const onThreat = vi.fn()
     antiDevtools.enable({ onThreat })
     await antiDevtools.ready()
-    listeners.forEach(fn => fn(true))
+    listeners.forEach(fn => fn(true, 'test'))
     expect(onThreat).toHaveBeenCalledTimes(1)
     expect(onThreat.mock.calls[0][0].type).toBe('devtools_detected')
+    expect(onThreat.mock.calls[0][0].details.method).toBe('test')
     expect(antiDevtools.detect().open).toBe(true)
     antiDevtools.disable()
     expect(antiDevtools.detect().open).toBe(false)
@@ -65,7 +68,7 @@ describe('antiDevtools listener lifecycle', () => {
   it('auto-lock shows an overlay on detection', async () => {
     antiDevtools.enable({ autoLock: true })
     await antiDevtools.ready()
-    listeners.forEach(fn => fn(true))
+    listeners.forEach(fn => fn(true, 'test'))
     expect(document.body.textContent).toContain('Developer Tools Detected')
     antiDevtools.disable()
     expect(document.body.textContent).not.toContain('Developer Tools Detected')

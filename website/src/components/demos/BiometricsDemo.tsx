@@ -1,12 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 import { User, Lock, ShieldCheck, AlertTriangle } from 'lucide-react'
 
 const BiometricsDemo = () => {
   const security = useHydeSecurity()
   const [score, setScore] = useState<number>(0)
-  const [isTracking, setIsTracking] = useState(false)
   const trackerRef = useRef<any>(null)
   const intervalRef = useRef<any>(null)
 
@@ -14,7 +13,6 @@ const BiometricsDemo = () => {
     const bio = (security as any).modules?.biometrics
     if (bio) {
       trackerRef.current = bio.startTracking(document.getElementById('login-form-zone'))
-      setIsTracking(true)
       emitLog('biometrics', 'Behavioral Biometrics tracking enabled on login form', 'success')
 
       intervalRef.current = setInterval(() => {
@@ -29,7 +27,6 @@ const BiometricsDemo = () => {
   const stopTracking = () => {
     if (trackerRef.current) trackerRef.current.stop()
     if (intervalRef.current) clearInterval(intervalRef.current)
-    setIsTracking(false)
     setScore(0)
     emitLog('biometrics', 'Stopped tracking', 'info')
   }
@@ -38,6 +35,7 @@ const BiometricsDemo = () => {
   useEffect(() => {
     startTracking()
     return () => stopTracking()
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- start once on mount
   }, [])
 
   const handleLogin = (e: React.FormEvent) => {

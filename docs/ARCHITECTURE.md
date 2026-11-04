@@ -4,9 +4,9 @@
 
 | Import | File | Contains |
 |---|---|---|
-| `@tirth1107/hyde-security-js` | `src/index.ts` | `HydeSecurity` API, named exports for every module, all types. **No React.** |
-| `@tirth1107/hyde-security-js/react` | `src/react.ts` | `HydeSecurityProvider`, `useHydeSecurity`, `useThreats`, `useSecurityAudit`, re-exports `HydeSecurity` |
-| UMD (`unpkg`) | `dist/hyde-security-js.umd.js` | Everything bundled, sets `window.HydeSecurity` |
+| `hyde-security-js` | `src/index.ts` | `HydeSecurity` API, named exports for every module, all types. **No React.** |
+| `hyde-security-js/react` | `src/react.ts` | `HydeSecurityProvider`, `useHydeSecurity`, `useThreats`, `useSecurityAudit`, re-exports `HydeSecurity` |
+| UMD (`unpkg.com/hyde-security-js@2`) | `dist/hyde-security-js.umd.js` | Everything bundled, sets `window.HydeSecurity` |
 
 ## Core (`src/core/`)
 
@@ -17,6 +17,7 @@
 | `callsite.ts` | `urlsFromStack` (Chrome + Firefox formats), `stackInspector.current()` (replaceable in tests), `hostMatches` / `isAllowedUrl` (origin, host, `*.wildcard`; no substring matching), extension-URL detection. |
 | `dom.ts` | `safeDom`: clobbering-proof `cookie()`, `all(selector)`, `isClobbered(name)`. Use in security-critical reads of `document.*`. |
 | `encoding.ts` | base64/base64url/hex/UTF-8, `randomBytes`, `getSubtle`, async `sha256Hex/Sri`, `timingSafeEqual`, the `Bytes` type. |
+| `devtoolsDetect.ts` | Built-in DevTools detection with no eval: console side effects (Date/RegExp/element formatting) and `console.table` timing. Optional `windowSizeChecker`. |
 | `sha256.ts` | Synchronous SHA-256 (verified against Node crypto). scriptGuard needs a sync hash to decide before a script executes. |
 | `config.ts` | `HydeSecurityConfig`, `LockdownOptions`, `defaultConfig`. |
 | `logger.ts`, `utils.ts` | Logging; `uid` (crypto.randomUUID), `optionsOf`, `preview`. |
@@ -54,7 +55,7 @@
 | `securityAudit` | same-origin HEAD fetch | `run`, `print` |
 | `reporting` | event bus, ReportingObserver, visibilitychange | `flush`, `stats`. Uses the *pristine* fetch/sendBeacon captured at load. |
 
-**Helpers / v1 modules:** `encryption` (Web Crypto AES-GCM, `decryptLegacy`), `storage` (`setEncrypted`/`getEncrypted`), `sanitize` (native `setHTML` → DOMPurify 3), `contentSecurityPolicy` (`strict`, `generateNonce`, `parse`), `network` (Web Crypto HMAC signing), `integrity` (SRI), `domGuard`, `antiClickjacking`, `cookie`, `session`, `csrfProtection`, `inputValidation`, `passwordStrength`, `honeypot`, `forms`, `antiBot`, `biometrics`, `fingerprint`, `device`, `routerGuard`, `obfuscator`, `watermark`, deterrents (`antiDevtools` with a lazy-loaded `devtools-detector`, `antiDebug`, `antiCopy`, `antiPrint`, `antiContextMenu`, `antiIframe`, `tabGuard`, `antiScreenCapture`).
+**Helpers / v1 modules:** `encryption` (Web Crypto AES-GCM, `decryptLegacy`), `storage` (`setEncrypted`/`getEncrypted`), `sanitize` (native `setHTML` → DOMPurify 3), `contentSecurityPolicy` (`strict`, `generateNonce`, `parse`), `network` (Web Crypto HMAC signing), `integrity` (SRI), `domGuard`, `antiClickjacking`, `cookie`, `session`, `csrfProtection`, `inputValidation`, `passwordStrength`, `honeypot`, `forms`, `antiBot`, `biometrics`, `fingerprint`, `device`, `routerGuard`, `obfuscator`, `watermark`, deterrents (`antiDevtools` using `core/devtoolsDetect`, `antiDebug`, `antiCopy`, `antiPrint`, `antiContextMenu`, `antiIframe`, `tabGuard`, `antiScreenCapture`).
 
 ## Writing a module
 
@@ -68,7 +69,7 @@
 ## Build & tests
 
 - `vite.config.ts` has two passes: ESM/CJS with `index` + `react` entries (dependencies external, ESM as `.mjs`), then `--mode umd` with everything bundled. `__HYDE_VERSION__` comes from `package.json`.
-- `npx vitest run` runs 143 jsdom tests. The setup uses Node's real Web Crypto.
+- `npx vitest run` runs 151 jsdom tests. The setup uses Node's real Web Crypto.
 - `npm run test:browser [firefox]` runs a real-browser smoke test of the UMD bundle with two local origins.
 
 ### jsdom gaps (test in the browser suite instead)
@@ -79,4 +80,4 @@
 
 ## Website (`website/`)
 
-Vite 8 + React 19. Aliases `hyde-security-js` → `../src/index.ts` and `hyde-security-js/react` → `../src/react.ts` (vite config + tsconfig paths). `dedupe: ['react','react-dom']` is required, or library source picks up the root's React 18. v2 demos live in `src/components/demos/GuardDemos.tsx`. The Live Logger subscribes with `HydeSecurity.on('*')`.
+Vite 8 + React 19. Hash-routed site: `#/` overview (`pages/Home.tsx`), `#/docs`, `#/changelog`, `#/playground` (lazy-loaded; the demo dashboard). Shared copy lives in `src/content.ts`. Styles: `site.css` (shell and pages), `index.css` (playground). Aliases `hyde-security-js` → `../src/index.ts` and `hyde-security-js/react` → `../src/react.ts` (vite config + tsconfig paths). `dedupe: ['react','react-dom']` is required, or library source picks up the root's React 18. v2 demos live in `src/components/demos/GuardDemos.tsx`. The Live Logger subscribes with `HydeSecurity.on('*')`.

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const FormProtectionDemo = () => {
   const security = useHydeSecurity()

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const EncryptionDemo = () => {
   const security = useHydeSecurity()
@@ -52,8 +52,8 @@ const EncryptionDemo = () => {
         />
       </div>
       <div className="btn-row">
-        <button onClick={doEncrypt} style={{ flex: 1 }}>🔒 Encrypt</button>
-        <button className="secondary" onClick={doDecrypt} style={{ flex: 1 }}>🔓 Decrypt</button>
+        <button onClick={doEncrypt} style={{ flex: 1 }}>Encrypt</button>
+        <button className="secondary" onClick={doDecrypt} style={{ flex: 1 }}>Decrypt</button>
       </div>
       <div style={{ 
         marginTop: 12, padding: 8, background: 'rgba(0,0,0,0.3)', borderRadius: 4, 

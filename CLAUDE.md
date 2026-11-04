@@ -6,6 +6,7 @@ Context and rules for AI assistants working on this repo. Deeper docs live in `d
 - `docs/KNOWN_ISSUES.md` — open limits and what has been fixed
 - `docs/V2_PLAN.md` — v2 design and the research behind each guard
 - `docs/MIGRATION-v2.md` — v1 → v2 breaking changes
+- `docs/RELEASE_NOTES-v2.0.0.md` — everything added and changed in 2.0
 
 ## Git workflow (must follow)
 
@@ -18,7 +19,7 @@ Context and rules for AI assistants working on this repo. Deeper docs live in `d
 
 ## What this project is
 
-**HydeSecurityJS** (`@tirth1107/hyde-security-js`, v2.0.0, MIT) — a client-side security
+**HydeSecurityJS** (npm `hyde-security-js`, v2.0.0, MIT; was `@tirth1107/hyde-security-js` up to 1.1.0) — a client-side security
 layer for web apps. v2 guards: scriptGuard (supply chain / PCI DSS 6.4.3 & 11.6.1),
 skimmerGuard (Magecart), networkFirewall, clipboardGuard (ClickFix), agentShield (AI-agent
 prompt injection), phishingGuard, messageGuard, prototypeGuard, Trusted Types, passkeys (PRF),
@@ -40,7 +41,7 @@ src/
   __tests__/          # Vitest + jsdom (core, modules, react, v2/)
 tests/browser/        # Real-browser smoke test (puppeteer-core, Chrome/Firefox, two origins)
 examples/             # Manual test pages (full-test.html/js, vanilla, react)
-website/              # Separate Vite + React 19 demo site (own package.json)
+website/              # Project site: overview, docs, changelog, playground (Vite + React 19, own package.json)
 dist/                 # Build output (gitignored)
 temp.html, temp.js    # Local scratch files, gitignored — not part of the lib
 ```
@@ -60,7 +61,7 @@ temp.html, temp.js    # Local scratch files, gitignored — not part of the lib
 Notes:
 - The owner uses this repo from both Windows and Linux (same drive). `node_modules`
   holds native binaries for **both** (`@rollup/*`, `@esbuild/*`, and in `website/`
-  `@rolldown/binding-*`, `lightningcss-*`). A plain `npm install` on one OS deletes
+  `@rolldown/binding-*`, `lightningcss-*`, `@oxlint/binding-*`). A plain `npm install` on one OS deletes
   the other OS's binaries — back them up and copy them back afterwards, or ask first.
 - Before pushing: `npx vitest run`, `npm run type-check`, `npm run lint`, `npm run build`,
   and `npm run test:browser` should all pass.
@@ -74,6 +75,7 @@ Notes:
   `enable()` calls `disable()` first, so calling it again reconfigures.
 - Report threats only through `createReporter('<module>')` from `core/events`. Never dispatch
   `hyde:threat` by hand.
+- No emoji in library UI text, docs or the website.
 - Wrap browser APIs only with `core/hooks` (`patchMethod`, `patchSetter`, `PatchGroup`).
 - Read security-relevant `document.*` via `core/dom` `safeDom` (clobbering-proof).
 - See "Writing a module" in `docs/ARCHITECTURE.md`.

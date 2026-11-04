@@ -1,25 +1,10 @@
 import { createReporter, ThreatListener } from '../core/events'
+import { createDevtoolsDetector } from '../core/devtoolsDetect'
 
 const reporter = createReporter('antiDevtools', 'warning')
 
-type Detector = {
-  addListener(fn: (open: boolean) => void): void
-  removeListener(fn: (open: boolean) => void): void
-  launch(): void
-  stop(): void
-}
-// Loaded on first enable(): devtools-detector runs a Function('return this') shim
-// at load, which a strict CSP reports. Apps that never enable this never load it.
-let detector: Detector | null = null
-let detectorLoading: Promise<Detector | null> | null = null
-function loadDetector(): Promise<Detector | null> {
-  if (!detectorLoading) {
-    detectorLoading = import('devtools-detector')
-      .then((m: any) => (detector = (m.default ?? m) as Detector))
-      .catch(() => null)
-  }
-  return detectorLoading
-}
+// One shared detector; it only runs while the module is enabled
+const detector = createDevtoolsDetector()
 
 let intervalId: ReturnType<typeof setInterval> | null = null
 let enabled = false
@@ -78,8 +63,9 @@ function hideOverlay() {
   overlayEl = null
 }
 
-let detectorListener: ((isOpen: boolean) => void) | null = null
+let detectorListener: ((isOpen: boolean, method: string) => void) | null = null
 let detectorOpen = false
+let detectorMethod = ''
 
 export interface AntiDevtoolsOptions {
   onThreat?: ThreatListener
@@ -102,25 +88,21 @@ export const antiDevtools = {
     detachKeyBlocker = attachKeyBlocker()
 
     // One listener per enable(); removed again in disable()
-    detectorListener = (isOpen: boolean) => {
+    detectorListener = (isOpen: boolean, method: string) => {
       detectorOpen = isOpen
+      detectorMethod = method
       if (!isOpen || !enabled) return
-      report('devtools_detected', { method: 'devtools-detector' })
-      if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
+      report('devtools_detected', { method, signals: [method] })
+      if (cfg?.autoLock) showOverlay('Developer Tools Detected. Access Denied.')
     }
-    const listener = detectorListener
-    loadDetector().then(d => {
-      // Still enabled with the same listener? (disable() may have run meanwhile)
-      if (!d || !enabled || detectorListener !== listener) return
-      d.addListener(listener)
-      d.launch()
-    })
+    detector.addListener(detectorListener)
+    detector.launch()
 
     if (cfg?.debuggerTrap) {
       intervalId = setInterval(() => {
         if (trapDebugger()) {
           report('devtools_detected', { method: 'debugger_trap', signals: ['debugger_trap'] })
-          if (cfg?.autoLock) showOverlay('⚠️ Developer Tools Detected — Access Denied')
+          if (cfg?.autoLock) showOverlay('Developer Tools Detected. Access Denied.')
         }
       }, 1500)
     }
@@ -133,7 +115,7 @@ export const antiDevtools = {
     detachKeyBlocker = null
     hideOverlay()
 
-    if (detector && detectorListener) {
+    if (detectorListener) {
       detector.removeListener(detectorListener)
       detector.stop()
     }
@@ -141,19 +123,21 @@ export const antiDevtools = {
     detectorOpen = false
     enabled = false
   },
-  /** Resolves once the detector library has loaded (useful in tests) */
+  /** Kept for v2.0 compatibility. Detection is built in now, so this resolves at once. */
   ready(): Promise<boolean> {
-    return loadDetector().then(d => !!d)
+    return Promise.resolve(true)
   },
   /** Whether the module is currently running */
   isEnabled() {
     return enabled
   },
   /**
-   * One-shot check based on the last result from devtools-detector.
+   * One-shot check. Runs the detectors now (even when the module is off).
    */
   detect(): { open: boolean; signals: string[] } {
-    return { open: detectorOpen, signals: detectorOpen ? ['devtools-detector'] : [] }
+    if (enabled && detectorOpen) return { open: true, signals: [detectorMethod] }
+    const r = detector.check()
+    return { open: r.open, signals: r.open ? [r.method] : [] }
   },
   lockScreen(reason?: string) {
     showOverlay(reason || 'Security locked')

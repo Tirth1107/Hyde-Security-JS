@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useHydeSecurity } from 'hyde-security-js/react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const TabGuardDemo = () => {
   const security = useHydeSecurity()
@@ -14,7 +14,7 @@ const TabGuardDemo = () => {
         onThreat: (ev: any) => emitLog('tabguard', 'Event: ' + ev.type, ev.type === 'tab_hidden' ? 'error' : 'success')
       })
       emitLog('tabguard', 'Tab Guard ENABLED — try switching tabs!', 'success')
-      setStatus({ text: '🛡️ Active — switch to another tab to test', color: '#22c55e' })
+      setStatus({ text: 'Active — switch to another tab to test', color: '#22c55e' })
     }
   }
 

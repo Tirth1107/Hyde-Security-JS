@@ -1,4 +1,9 @@
-import validator from 'validator'
+// Per-function imports: the full validator package is ~100 KB
+import isEmail from 'validator/lib/isEmail'
+import isURL from 'validator/lib/isURL'
+import isAlphanumeric from 'validator/lib/isAlphanumeric'
+import escape from 'validator/lib/escape'
+import trim from 'validator/lib/trim'
 
 export type ValidationRule = 
   | { type: 'required'; message?: string }
@@ -12,15 +17,15 @@ export type ValidationRule =
 
 export const inputValidation = {
   isEmail(input: string): boolean {
-    return validator.isEmail(input)
+    return isEmail(input)
   },
   
   isURL(input: string, opts?: { requireHTTPS?: boolean }): boolean {
-    return validator.isURL(input, { require_protocol: true, require_valid_protocol: true, protocols: opts?.requireHTTPS ? ['https'] : ['http', 'https'] })
+    return isURL(input, { require_protocol: true, require_valid_protocol: true, protocols: opts?.requireHTTPS ? ['https'] : ['http', 'https'] })
   },
   
   isAlphanumeric(input: string): boolean {
-    return validator.isAlphanumeric(input)
+    return isAlphanumeric(input)
   },
   
   isSQLInjection(input: string): boolean {
@@ -36,7 +41,7 @@ export const inputValidation = {
   },
   
   sanitizeInput(input: string): string {
-    return validator.escape(validator.trim(input))
+    return escape(trim(input))
   },
   
   validateField(input: string, rules: ValidationRule[]): { valid: boolean; errors: string[] } {

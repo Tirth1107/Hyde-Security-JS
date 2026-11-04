@@ -92,3 +92,15 @@ describe('honeypot', () => {
     expect(isTriggered(form)).toBe(true)
   })
 })
+
+describe('passwordStrength lazy zxcvbn', () => {
+  it('gives a sensible built-in estimate, then uses zxcvbn once loaded', async () => {
+    const early = passwordStrength.check('aaaaaa')
+    expect(early.score).toBeLessThan(2)
+    expect(await passwordStrength.load()).toBe(true)
+    expect(passwordStrength.isLoaded()).toBe(true)
+    const r = await passwordStrength.checkAsync('correct-Horse-battery-st4ple!')
+    expect(r.score).toBeGreaterThanOrEqual(3)
+    expect(typeof r.crackTime).toBe('string')
+  })
+})

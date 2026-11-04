@@ -1,5 +1,5 @@
 {
-  "name": "@tirth1107/hyde-security-js",
+  "name": "hyde-security-js",
   "version": "2.0.0",
   "description": "Modern client-side security layer for web apps: supply-chain script guard (PCI DSS 6.4.3/11.6.1), skimmer & ClickFix defense, AI-agent prompt-injection shield, network firewall, Trusted Types, passkeys, Web Crypto encryption, security audit, and more.",
   "main": "dist/hyde-security-js.cjs.js",
@@ -68,7 +68,7 @@
     "supply-chain",
     "csp"
   ],
-  "author": "HydeSecurityJS",
+  "author": "Tirth1107 (https://github.com/Tirth1107)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -86,7 +86,6 @@
     "axios": "^1.4.0",
     "bowser": "^2.11.0",
     "crypto-js": "^4.1.1",
-    "devtools-detector": "^2.0.25",
     "dompurify": "^3.4.17",
     "js-cookie": "^3.0.1",
     "localforage": "^1.10.0",

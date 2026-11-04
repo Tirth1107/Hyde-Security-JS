@@ -173,6 +173,18 @@ check('audit: flags DOM clobbering of document.cookie', audit.ids.includes('dom-
 const balanced = await page.evaluate(() => { HydeSecurity.init({ mode: 'balanced' }); return { devtools: HydeSecurity.modules.antiDevtools.isEnabled() } })
 check('balanced mode does not start anti-devtools', balanced.devtools === false, balanced)
 
+// Built-in DevTools detection runs under the strict CSP (any eval would show up as an error
+// below). The automation protocol is itself a DevTools client, so a hit here is expected.
+const dt = await page.evaluate(async () => {
+  const m = HydeSecurity.modules.antiDevtools
+  m.enable({})
+  await new Promise(r => setTimeout(r, 1200))
+  const r = m.detect()
+  m.disable()
+  return { ...r, off: !m.isEnabled() }
+})
+check('anti-devtools: built-in detector runs and stops', dt.off && (!dt.open || ['date-to-string', 'reg-to-string', 'element-id', 'performance'].includes(dt.signals[0])), dt)
+
 // 10. encryption in a real browser
 const enc = await page.evaluate(async () => {
   const c = await HydeSecurity.encryptText('hello', 'browser-passphrase')
@@ -184,8 +196,8 @@ check('encryption: AES-GCM round trip', enc.ok && enc.prefix === 'hyde2.', enc)
 const destroyed = await page.evaluate(() => { HydeSecurity.destroy(); return EventTarget.prototype.addEventListener.toString().includes('[native code]') })
 check('destroy: addEventListener restored to native', destroyed)
 
-// Firefox reports the bundled devtools-detector's caught Function('return this') shim under CSP (UMD only; see README)
-const unexpected = errors.filter(e => !/net::ERR|Failed to load resource|404/.test(e) && !/blocked a JavaScript eval/.test(e))
+// No eval exception any more: the UMD bundle must load under a strict CSP without reports
+const unexpected = errors.filter(e => !/net::ERR|Failed to load resource|404/.test(e))
 check('no unexpected console/page errors', unexpected.length === 0, unexpected)
 
 console.log(`\n== ${browserName} ==`)

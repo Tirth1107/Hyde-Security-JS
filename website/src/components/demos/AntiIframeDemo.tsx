@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { emitLog } from '../LiveLogger'
+import { emitLog } from '../../log'
 
 const AntiIframeDemo = () => {
   const [result, setResult] = useState<{ text: string, type: 'info' | 'success' | 'error' } | null>(null)
@@ -8,14 +8,14 @@ const AntiIframeDemo = () => {
     try {
       const inIframe = window.self !== window.top
       if (inIframe) {
-        setResult({ text: '⚠️ Running inside an iframe!', type: 'error' })
+        setResult({ text: 'Running inside an iframe!', type: 'error' })
         emitLog('iframe', 'Iframe detected!', 'error')
       } else {
-        setResult({ text: '✅ Running as top-level window', type: 'success' })
+        setResult({ text: 'Running as top-level window', type: 'success' })
         emitLog('iframe', 'Not in iframe — safe', 'success')
       }
-    } catch (e) {
-      setResult({ text: '⚠️ Cross-origin iframe detected (access blocked)', type: 'error' })
+    } catch {
+      setResult({ text: 'Cross-origin iframe detected (access blocked)', type: 'error' })
       emitLog('iframe', 'Cross-origin iframe detection blocked', 'error')
     }
   }
