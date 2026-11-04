@@ -56,6 +56,7 @@ temp.html, temp.js    # Local scratch files, gitignored — not part of the lib
 | Tests | `npm test` (watch) / `npx vitest run` (once) |
 | Browser tests | `npm run build && npm run test:browser` (add `-- firefox`) |
 | Type-check | `npm run type-check` |
+| Publish | Push a `vX.Y.Z` tag; `.github/workflows/publish.yml` publishes via npm trusted publishing (no token/OTP) |
 | Demo website | `cd website && npm run dev` (build: `npm run build:website`) |
 
 Notes:

@@ -72,7 +72,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Tirth1107/Hyde-Security-JS.git"
+    "url": "git+https://github.com/Tirth1107/Hyde-Security-JS.git"
   },
   "homepage": "https://github.com/Tirth1107/Hyde-Security-JS#readme",
   "bugs": {
