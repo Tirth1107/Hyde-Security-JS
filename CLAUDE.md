@@ -15,7 +15,8 @@ Context and rules for AI assistants working on this repo. Deeper docs live in `d
 2. Commit and push work to that branch only.
 3. **Do not merge into `main` until the owner explicitly says "merge to main".**
    The owner usually merges manually. Only when told, merge the branch into `main`.
-4. Commit messages end with the attribution line from the session reminder.
+4. No AI attribution anywhere: no `Co-Authored-By` trailers or "generated with" lines in commits,
+   merges, tags, PRs or release notes. Commits are authored by the owner only.
 
 ## What this project is
 
